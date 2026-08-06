@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Asper X · YOUR TOP</title>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{margin:0;background:#0a0a0a;color:#e0e0e0;font-family:'Segoe UI',Arial,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center}
+#app{max-width:600px;width:100%;margin:auto;padding:20px}
+
+h1{text-align:center;font-size:32px;font-weight:300;letter-spacing:3px;color:#fff;margin-bottom:20px}
+h1 .red{color:#8b0000;font-weight:700}
+h1 .light{font-weight:300;color:#888;font-size:20px;letter-spacing:2px}
+
+.btn-start{background:linear-gradient(135deg,#8b0000,#cc0000);color:#fff;font-size:18px;font-weight:700;letter-spacing:3px;padding:18px;margin:10px 0 25px 0;border:none;border-radius:8px;width:100%;cursor:pointer;transition:all 0.3s ease;text-transform:uppercase}
+.btn-start:hover{background:linear-gradient(135deg,#cc0000,#ff1a1a);box-shadow:0 4px 30px rgba(139,0,0,0.4);transform:translateY(-2px)}
+
+.btn-secondary{background:transparent;border:1px solid #333;color:#888;padding:14px;border-radius:8px;width:100%;cursor:pointer;font-size:15px;transition:all 0.3s ease;margin-top:10px}
+.btn-secondary:hover{border-color:#8b0000;color:#8b0000;background:rgba(139,0,0,0.05)}
+
+.btn-rank{background:transparent;border:1px solid #333;color:#888;padding:14px;border-radius:8px;width:100%;cursor:pointer;font-size:15px;letter-spacing:2px;transition:all 0.3s ease;margin-top:10px}
+.btn-rank:hover{border-color:#8b0000;color:#8b0000;background:rgba(139,0,0,0.05)}
+
+.info-grid{display:grid;grid-template-columns:1fr;gap:8px;margin:20px 0}
+.info-item{background:#1a1a1a;padding:14px 18px;border-radius:8px;border:1px solid #252525;display:flex;align-items:center;gap:14px;transition:all 0.3s ease}
+.info-item:hover{border-color:#333;background:#1f1f1f}
+.info-item .icon{font-size:22px;min-width:36px;text-align:center}
+.info-item .text{flex:1}
+.info-item .text .main{color:#e0e0e0;font-weight:500;font-size:15px}
+.info-item .text .desc{color:#666;font-size:13px;margin-top:2px}
+
+.footer{text-align:center;color:#444;font-size:13px;margin-top:30px;padding-top:20px;border-top:1px solid #1a1a1a;letter-spacing:1px}
+.footer .heart{color:#ff0044}
+.footer .author{color:#666;font-size:13px;margin-top:5px;letter-spacing:1px;display:flex;justify-content:center;gap:12px;align-items:center}
+.footer .author a{color:#888;text-decoration:none;transition:all 0.3s ease;display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;background:#1a1a1a;border:1px solid #252525}
+.footer .author a:hover{color:#8b0000;border-color:#8b0000;transform:scale(1.05)}
+
+.progress-container{display:none;background:#1a1a1a;padding:15px 20px;border-radius:8px;margin-bottom:20px;border:1px solid #252525}
+.progress-container.show{display:block}
+.progress-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.progress-top .label{color:#888;font-size:13px;letter-spacing:1px}
+.progress-top .percent{color:#8b0000;font-weight:700;font-size:16px}
+.progress-bar{width:100%;height:4px;background:#252525;border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,#8b0000,#cc0000);transition:width 0.5s ease;border-radius:2px}
+
+@media(max-width:480px){#app{padding:10px}h1{font-size:26px}.info-item{padding:12px 14px}.info-item .text .main{font-size:14px}.footer .author{flex-wrap:wrap}}
+</style>
+
+</head>
+
+<body>
+
+<div id="app"></div>
+
+<script>
+
+const SONGS=[
+"Bad Trip","Monsta","Plague","Sorry Not Sorry","Über Ich",
+"Будет больно","Был таким всегда","В долгий путь","Вместе",
+"Ветер перемен (2 раунд 17 независимый баттл)","Волчок",
+"Всё разбито","Всё, что должно умереть","Выстрели",
+"Дело нескольких минут","Демоны города Икс","Держись",
+"Дрянь","Дыхание","Дышать и жить","Жить","Заряжай",
+"Земля","Звёздная","Змея","Игра","Имя","Ищи",
+"Каждый справляется сам","Каприз","Карантинка",
+"Картонная","Квадрат Декарта",
+"Классики (tamagotchik feat. Asper X)","Колыбельная",
+"Космос","Крики планет","Курит и молчит",
+"Лабиринт (ЛИСН feat. Asper X)","Линии жизни",
+"Локус генома","Любовь и ненависть на улице Ленина",
+"Мой Бог","Море","Мотыльки (Port Avenue feat. Asper X)",
+"Мы не железные","Надо улыбаться","Не люблю",
+"Не выходи","Никому не говори","От автора",
+"Пей, лечись, люби (feat. Гарри Топор)","Перелом",
+"Петь в тишине","Питер Пэйн","План","Почти получилось",
+"Праздничная","Приходи ко мне (МОНТГОМЕРИ feat. Asper X)",
+"Привидения","Приметы (ГОТЭМ feat. Asper X)",
+"Просто поговорить","Прости (feat. VULPES VULT!)",
+"ПТСР (feat. Ctrl+Freak)","Пускай весь мир разлетается по кускам",
+"Пустота (feat. Ctrl+Freak)","Радость","Самая честная песня",
+"Сгораю","Сказка","Скоро узнаешь","Слёзы сквозь смех",
+"Смерть луны","Прозерпина","Сумасшедшим вход бесплатно",
+"Ты будешь гореть в аду","Универсальный солдат",
+"Шаг назад (UNVRS feat. Asper X)","Шизофрения (feat. Серафим)",
+"Шрам","Чтобы не забыть (МОЛОДОСТЬ ВНУТРИ feat. Asper X)",
+"Эдем","Эпитафия (СИНЕРГИС feat. Asper X)","Ядовитые",
+"Я рассыпаю сахар"
+];
+
+let state={songs:[],a:null,b:null,history:[],compared:[]};
+
+function save(){localStorage.setItem("asper_x",JSON.stringify(state));}
+
+function load(){
+let x=localStorage.getItem("asper_x");
+if(x){
+try{
+let parsed=JSON.parse(x);
+if(parsed.songs&&parsed.songs.length>0){
+parsed.songs=parsed.songs.map(s=>({...s,favorite:s.favorite||false,skipped:s.skipped||false,wins:s.wins||0,losses:s.losses||0,played:s.played||0,elo:s.elo||1000,preview:s.preview||""}));
+parsed.compared=parsed.compared||[];
+state=parsed;
+return true;
+}}catch(e){}
+}
+return false;
+}
+
+function init(){
+state.songs=SONGS.map((x,i)=>({id:i,title:x,preview:"",elo:1000,wins:0,losses:0,favorite:false,skipped:false,played:0}));
+state.history=[];
+state.compared=[];
+state.a=null;
+state.b=null;
+save();
+}
+
+function isCompared(id1,id2){
+if(id1>id2){let t=id1;id1=id2;id2=t;}
+return state.compared.some(p=>p.a===id1&&p.b===id2);
+}
+
+function addCompared(id1,id2,winner){
+if(id1>id2){let t=id1;id1=id2;id2=t;}
+state.compared.push({a:id1,b:id2,winner:winner});
+}
+
+function getMinComparisons(song){
+return song.wins>0?5:3;
+}
+
+function isComplete(){
+let active=state.songs.filter(s=>!s.skipped);
+if(active.length<2)return true;
+for(let s of active){
+if(s.played<getMinComparisons(s))return false;
+}
+return true;
+}
+
+function getProgress(){
+let active=state.songs.filter(s=>!s.skipped);
+let needed=0;
+for(let s of active){
+needed+=getMinComparisons(s);
+}
+needed=Math.ceil(needed/2);
+let done=state.compared.length;
+let progress=Math.min(99,Math.round((done/needed)*100));
+return progress;
+}
+
+function home(){
+init();
+app.innerHTML=`
+<h1>ASPER <span class="red">X</span> <span class="light">· YOUR TOP</span></h1>
+<button class="btn-start" onclick="start()">▶ НАЧАТЬ</button>
+<div class="info-grid">
+<div class="info-item">
+<div class="icon">🎯</div>
+<div class="text">
+<div class="main">Выбери лучшую песню</div>
+<div class="desc">Из двух предложенных</div>
+</div>
+</div>
+<div class="info-item">
+<div class="icon">❤️</div>
+<div class="text">
+<div class="main">В избранное</div>
+<div class="desc">Отметь любимые треки</div>
+</div>
+</div>
+<div class="info-item">
+<div class="icon">⏭️</div>
+<div class="text">
+<div class="main">Пропустить</div>
+<div class="desc">Не учитывается в топе</div>
+</div>
+</div>
+</div>
+<div class="footer">
+<div>Сделано с <span class="heart">❤️</span> для Asper X и фандома</div>
+<div class="author">
+<a href="https://t.me/tinvafla" target="_blank">✈️ tinvafla</a>
+<a href="https://x.com/tinvafla" target="_blank">🐦 tinvafla</a>
+</div>
+</div>
+`;
+}
+
+function start(){
+if(!state.songs.length)init();
+let active=state.songs.filter(s=>!s.skipped);
+if(active.length<2){showComplete();return;}
+if(isComplete()){showComplete();return;}
+pair();
+}
+
+function showComplete(){
+app.innerHTML=`
+<div style="text-align:center;padding:40px 20px;">
+<div style="font-size:64px;margin-bottom:20px;">🎯</div>
+<h1 style="font-size:32px;margin-bottom:10px;">ASPER <span class="red">X</span></h1>
+<p style="color:#666;margin-bottom:30px;font-size:16px;">Твой топ готов!</p>
+<button class="btn-start" onclick="ranking()" style="max-width:400px;margin:0 auto;">🏆 Рейтинг</button>
+<button class="btn-secondary" onclick="resetAll()" style="max-width:400px;margin:10px auto 0 auto;">🔄 Начать заново</button>
+<div class="footer" style="margin-top:30px;">
+<div>Сделано с <span class="heart">❤️</span> для Asper X и фандома</div>
+<div class="author">
+<a href="https://t.me/tinvafla" target="_blank">✈️ tinvafla</a>
+<a href="https://x.com/tinvafla" target="_blank">🐦 tinvafla</a>
+</div>
+</div>
+</div>
+`;
+}
+
+function pair(){
+let active=state.songs.filter(s=>!s.skipped);
+if(active.length<2){showComplete();return;}
+if(isComplete()){showComplete();return;}
+
+// ФАЗА 1: Пока нулевых больше 1 — даём им приоритет
+let zeros = active.filter(s => s.wins === 0);
+if (zeros.length > 1) {
+    zeros.sort((a, b) => a.played - b.played);
+    state.a = zeros[0];
+    let opponents = active.filter(s => s.id !== state.a.id);
+    opponents.sort((a, b) => {
+        let aZ = a.wins === 0 ? 0 : 1;
+        let bZ = b.wins === 0 ? 0 : 1;
+        return aZ - bZ;
+    });
+    state.b = opponents[0];
+    save();
+    render();
+    return;
+}
+
+// ФАЗА 2: Стандартный Elo-подбор
+active.sort((a,b)=>a.played-b.played);
+
+let found=false;
+for(let i=0;i<active.length&&!found;i++){
+let a=active[i];
+let opponents=active.filter(s=>s.id!==a.id&&!isCompared(a.id,s.id));
+if(opponents.length>0){
+state.a=a;
+opponents.sort((x,y)=>x.played-y.played);
+state.b=opponents[0];
+found=true;
+}
+}
+
+if(!found){
+active.sort((a,b)=>a.played-b.played);
+state.a=active[0];
+let opponents=active.filter(s=>s.id!==state.a.id);
+opponents.sort((a,b)=>a.played-b.played);
+state.b=opponents[0];
+}
+
+if(state.a&&state.b&&state.a.id===state.b.id){
+showComplete();
+return;
+}
+
+save();
+render();
+}
+
+function render(){
+if(!state.a||!state.b){home();return;}
+
+let progress=getProgress();
+
+let favA=state.a.favorite?'active':'';
+let favB=state.b.favorite?'active':'';
+let skipA=state.a.favorite?'disabled':'';
+let skipB=state.b.favorite?'disabled':'';
+
+app.innerHTML=`
+<h1 style="font-size:22px;margin-bottom:15px;">ASPER <span class="red">X</span> <span class="light" style="font-size:16px;">· YOUR TOP</span></h1>
+
+<div class="progress-container show">
+<div class="progress-top">
+<span class="label">Оценка</span>
+<span class="percent">${progress}%</span>
+</div>
+<div class="progress-bar">
+<div class="progress-fill" style="width:${progress}%"></div>
+</div>
+</div>
+
+<div style="background:#1a1a1a;padding:25px 20px;border-radius:12px;margin:15px 0;text-align:center;border:1px solid #2a2a2a;">
+<div style="font-size:24px;font-weight:600;margin-bottom:20px;color:#fff;min-height:70px;display:flex;align-items:center;justify-content:center;line-height:1.4;">${state.a.title}</div>
+<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+<button onclick="vote('a')" style="flex:1;min-width:80px;padding:14px;border:none;border-radius:8px;background:linear-gradient(135deg,#8b0000,#aa0000);color:#fff;font-size:15px;font-weight:600;cursor:pointer;transition:all 0.3s ease;">Выбрать</button>
+<button onclick="fav('a')" style="background:transparent;border:1px solid ${state.a.favorite?'#ff0044':'#333'};color:${state.a.favorite?'#ff0044':'#666'};font-size:20px;padding:10px;min-width:60px;cursor:pointer;transition:all 0.4s ease;border-radius:8px;${state.a.favorite?'background:rgba(255,0,68,0.3);text-shadow:0 0 30px rgba(255,0,68,0.6);':''}">❤</button>
+<button onclick="skip('a')" style="background:transparent;border:1px solid #2a2a2a;color:#555;font-size:14px;padding:10px;min-width:60px;cursor:${state.a.favorite?'not-allowed':'pointer'};opacity:${state.a.favorite?'0.3':'1'};pointer-events:${state.a.favorite?'none':'auto'};border-radius:8px;">⏭</button>
+</div>
+</div>
+
+<h2 style="text-align:center;font-size:18px;font-weight:300;color:#555;margin:10px 0;letter-spacing:2px;">— ИЛИ —</h2>
+
+<div style="background:#1a1a1a;padding:25px 20px;border-radius:12px;margin:15px 0;text-align:center;border:1px solid #2a2a2a;">
+<div style="font-size:24px;font-weight:600;margin-bottom:20px;color:#fff;min-height:70px;display:flex;align-items:center;justify-content:center;line-height:1.4;">${state.b.title}</div>
+<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+<button onclick="vote('b')" style="flex:1;min-width:80px;padding:14px;border:none;border-radius:8px;background:linear-gradient(135deg,#8b0000,#aa0000);color:#fff;font-size:15px;font-weight:600;cursor:pointer;transition:all 0.3s ease;">Выбрать</button>
+<button onclick="fav('b')" style="background:transparent;border:1px solid ${state.b.favorite?'#ff0044':'#333'};color:${state.b.favorite?'#ff0044':'#666'};font-size:20px;padding:10px;min-width:60px;cursor:pointer;transition:all 0.4s ease;border-radius:8px;${state.b.favorite?'background:rgba(255,0,68,0.3);text-shadow:0 0 30px rgba(255,0,68,0.6);':''}">❤</button>
+<button onclick="skip('b')" style="background:transparent;border:1px solid #2a2a2a;color:#555;font-size:14px;padding:10px;min-width:60px;cursor:${state.b.favorite?'not-allowed':'pointer'};opacity:${state.b.favorite?'0.3':'1'};pointer-events:${state.b.favorite?'none':'auto'};border-radius:8px;">⏭</button>
+</div>
+</div>
+
+<button class="btn-rank" onclick="ranking()">🏆 Рейтинг</button>
+`;
+}
+
+function expected(a,b){return 1/(1+Math.pow(10,(b.elo-a.elo)/400));}
+
+function elo(w,l){
+let k=32;
+let ew=expected(w,l);
+let el=expected(l,w);
+w.elo=Math.round(w.elo+k*(1-ew));
+l.elo=Math.round(l.elo+k*(0-el));
+}
+
+function vote(x){
+let w=x==="a"?state.a:state.b;
+let l=x==="a"?state.b:state.a;
+
+elo(w,l);
+w.wins++;
+l.losses++;
+w.played++;
+l.played++;
+
+addCompared(state.a.id,state.b.id,w.id);
+state.history.push({a:state.a.id,b:state.b.id,winner:w.id,time:Date.now()});
+
+save();
+if(isComplete()){showComplete();}else{pair();}
+}
+
+function fav(x){
+let s=x==="a"?state.a:state.b;
+s.favorite=!s.favorite;
+save();
+render();
+}
+
+function skip(x){
+let s=x==="a"?state.a:state.b;
+if(s.favorite)return;
+s.skipped=true;
+state.compared=state.compared.filter(p=>p.a!==s.id&&p.b!==s.id);
+if(state.a&&state.a.id===s.id)state.a=null;
+if(state.b&&state.b.id===s.id)state.b=null;
+save();
+if(isComplete()){showComplete();}else{pair();}
+}
+
+function ranking(){
+let list=[...state.songs].filter(s=>!s.skipped).sort((a,b)=>b.elo-a.elo);
+let skipped=state.songs.filter(s=>s.skipped);
+app.innerHTML=`
+<h1 style="font-size:24px;">ASPER <span class="red">X</span> <span class="light" style="font-size:18px;">· YOUR TOP</span></h1>
+<div style="margin:15px 0;text-align:center;color:#666;font-size:13px;">Твой персональный рейтинг</div>
+${list.map((x,i)=>`
+<div style="background:#1a1a1a;padding:14px 18px;margin:6px 0;border-radius:8px;border:1px solid ${i===0?'#8b0000':i===1?'#4a4a4a':i===2?'#4a3a2a':'#252525'};display:flex;justify-content:space-between;align-items:center;transition:all 0.3s ease;${i===0?'background:rgba(139,0,0,0.08);':''}">
+<span><span style="color:#555;font-weight:300;margin-right:12px;min-width:30px;display:inline-block;">${i+1}.</span><span style="color:#e0e0e0;font-weight:500;">${x.title}</span>${x.favorite?'<span style="color:#ff0044;margin-left:10px;">♥</span>':''}</span>
+</div>
+`).join('')}
+${skipped.length>0?`
+<div style="margin-top:20px;padding-top:15px;border-top:1px solid #1a1a1a;">
+<h3 style="color:#444;font-weight:300;text-align:center;font-size:14px;letter-spacing:2px;margin-bottom:10px;">— ПРОПУЩЕННЫЕ —</h3>
+${skipped.map(x=>`
+<div style="color:#444;font-size:13px;padding:6px 12px;background:#111;border-radius:6px;margin:3px 0;display:flex;justify-content:space-between;">
+<span>${x.title}</span>${x.favorite?'<span style="color:#ff0044;">♥</span>':''}
+</div>
+`).join('')}
+</div>
+`:''}
+<button class="btn-start" onclick="home()" style="margin-top:20px;">← На главную</button>
+<button class="btn-secondary" onclick="resetAll()">🔄 Начать заново</button>
+<div class="footer" style="margin-top:30px;">
+<div>Сделано с <span class="heart">❤️</span> для Asper X и фандома</div>
+<div class="author">
+<a href="https://t.me/tinvafla" target="_blank">✈️ tinvafla</a>
+<a href="https://x.com/tinvafla" target="_blank">🐦 tinvafla</a>
+</div>
+</div>
+`;
+}
+
+function resetAll(){
+if(confirm('Удалить все данные и начать заново?')){
+init();
+home();
+}
+}
+
+init();
+home();
+
+</script>
+
+</body>
+</html>
