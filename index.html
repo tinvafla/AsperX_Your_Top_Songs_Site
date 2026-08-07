@@ -429,7 +429,12 @@ function sendResultsAndExit() {
         })
     })
     .then(() => {
+        // Пробуем открыть через Telegram Deep Link
         window.location.href = 'tg://resolve?domain=AsperX_Your_Top_Songs_bot';
+        // Если через 2 секунды не переключилось — переходим по обычной ссылке
+        setTimeout(() => {
+            window.location.href = 'https://t.me/AsperX_Your_Top_Songs_bot';
+        }, 2000);
     })
     .catch(err => console.error(err));
 }
