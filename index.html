@@ -92,6 +92,7 @@ const SONGS=[
 ]
 
 let state={songs:[],a:null,b:null,history:[],compared:[]};
+let ratings = {}; // Глобальная переменная для хранения рейтингов
 
 function save(){localStorage.setItem("asper_x",JSON.stringify(state));}
 
@@ -116,6 +117,7 @@ state.history=[];
 state.compared=[];
 state.a=null;
 state.b=null;
+ratings = {};
 save();
 }
 
@@ -224,7 +226,6 @@ let active=state.songs.filter(s=>!s.skipped);
 if(active.length<2){showComplete();return;}
 if(isComplete()){showComplete();return;}
 
-// ФАЗА 1: Пока нулевых больше 1 — даём им приоритет
 let zeros = active.filter(s => s.wins === 0);
 if (zeros.length > 1) {
     zeros.sort((a, b) => a.played - b.played);
@@ -241,7 +242,6 @@ if (zeros.length > 1) {
     return;
 }
 
-// ФАЗА 2: Стандартный Elo-подбор
 active.sort((a,b)=>a.played-b.played);
 
 let found=false;
@@ -343,6 +343,10 @@ l.played++;
 addCompared(state.a.id,state.b.id,w.id);
 state.history.push({a:state.a.id,b:state.b.id,winner:w.id,time:Date.now()});
 
+// Сохраняем рейтинг в глобальную переменную
+ratings[w.title] = w.elo;
+ratings[l.title] = l.elo;
+
 save();
 if(isComplete()){showComplete();}else{pair();}
 }
@@ -368,6 +372,10 @@ if(isComplete()){showComplete();}else{pair();}
 function ranking(){
 let list=[...state.songs].filter(s=>!s.skipped).sort((a,b)=>b.elo-a.elo);
 let skipped=state.songs.filter(s=>s.skipped);
+
+// Обновляем глобальный рейтинг
+list.forEach(s => { ratings[s.title] = s.elo; });
+
 app.innerHTML=`
 <h1 style="font-size:24px;">ASPER <span class="red">X</span> <span class="light" style="font-size:18px;">· YOUR TOP</span></h1>
 <div style="margin:15px 0;text-align:center;color:#666;font-size:13px;">Твой персональный рейтинг</div>
@@ -388,6 +396,13 @@ ${skipped.map(x=>`
 `:''}
 <button class="btn-start" onclick="home()" style="margin-top:20px;">← На главную</button>
 <button class="btn-secondary" onclick="resetAll()">🔄 Начать заново</button>
+
+<div style="display:flex; flex-direction:column; gap:10px; margin-top:20px; max-width:400px; margin-left:auto; margin-right:auto;">
+    <button onclick="sendResultsAndExit()" class="btn-start" style="width:100%; text-align:center;">
+        🔙 Вернуться в бота и сохранить топ
+    </button>
+</div>
+
 <div class="footer" style="margin-top:30px;">
 <div>Сделано с <span class="heart">❤️</span> для Asper X и фандома</div>
 <div class="author">
@@ -405,25 +420,14 @@ home();
 }
 }
 
-init();
-home();
-
-</script>
-
-</body>
-</html>
-<button onclick="sendResultsAndExit()" style="...">
-    🔙 Вернуться в бота и сохранить топ
-</button>
-
-<script>
 function sendResultsAndExit() {
+    const sorted = Object.entries(ratings).sort((a,b) => b[1] - a[1]);
     fetch('https://asperx-bot.onrender.com/save_results', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             user_id: 'telegram_user_id',
-            top_90: Object.entries(ratings).sort((a,b) => b[1] - a[1])
+            top_90: sorted
         })
     })
     .then(() => {
@@ -431,4 +435,11 @@ function sendResultsAndExit() {
     })
     .catch(err => console.error(err));
 }
+
+init();
+home();
+
 </script>
+
+</body>
+</html>
