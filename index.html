@@ -7,10 +7,11 @@
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{margin:0;background:#0a0a0a;color:#e0e0e0;font-family:'Segoe UI',Arial,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center}
-#app{max-width:600px;width:100%;margin:auto;padding:20px}
+html,body{height:100%}
+body{margin:0;background:#0a0a0a;color:#e0e0e0;font-family:'Segoe UI',Arial,sans-serif;display:flex;align-items:center;justify-content:center}
+#app{max-width:600px;width:100%;margin:auto;padding:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh}
 
-h1{text-align:center;font-size:32px;font-weight:300;letter-spacing:3px;color:#fff;margin-bottom:20px}
+h1{text-align:center;font-size:32px;font-weight:300;letter-spacing:3px;color:#fff;margin:0 0 20px 0;line-height:1.2}
 h1 .red{color:#8b0000;font-weight:700}
 h1 .light{font-weight:300;color:#888;font-size:20px;letter-spacing:2px}
 
@@ -23,7 +24,7 @@ h1 .light{font-weight:300;color:#888;font-size:20px;letter-spacing:2px}
 .btn-rank{background:transparent;border:1px solid #333;color:#888;padding:14px;border-radius:8px;width:100%;cursor:pointer;font-size:15px;letter-spacing:2px;transition:all 0.3s ease;margin-top:10px}
 .btn-rank:hover{border-color:#8b0000;color:#8b0000;background:rgba(139,0,0,0.05)}
 
-.info-grid{display:grid;grid-template-columns:1fr;gap:8px;margin:20px 0}
+.info-grid{display:grid;grid-template-columns:1fr;gap:8px;margin:20px 0;width:100%}
 .info-item{background:#1a1a1a;padding:14px 18px;border-radius:8px;border:1px solid #252525;display:flex;align-items:center;gap:14px;transition:all 0.3s ease}
 .info-item:hover{border-color:#333;background:#1f1f1f}
 .info-item .icon{font-size:22px;min-width:36px;text-align:center}
@@ -31,13 +32,13 @@ h1 .light{font-weight:300;color:#888;font-size:20px;letter-spacing:2px}
 .info-item .text .main{color:#e0e0e0;font-weight:500;font-size:15px}
 .info-item .text .desc{color:#666;font-size:13px;margin-top:2px}
 
-.footer{text-align:center;color:#444;font-size:13px;margin-top:30px;padding-top:20px;border-top:1px solid #1a1a1a;letter-spacing:1px}
+.footer{text-align:center;color:#444;font-size:13px;margin-top:30px;padding-top:20px;border-top:1px solid #1a1a1a;letter-spacing:1px;width:100%}
 .footer .heart{color:#ff0044}
 .footer .author{color:#666;font-size:13px;margin-top:5px;letter-spacing:1px;display:flex;justify-content:center;gap:12px;align-items:center}
 .footer .author a{color:#888;text-decoration:none;transition:all 0.3s ease;display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;background:#1a1a1a;border:1px solid #252525}
 .footer .author a:hover{color:#8b0000;border-color:#8b0000;transform:scale(1.05)}
 
-.progress-container{display:none;background:#1a1a1a;padding:15px 20px;border-radius:8px;margin-bottom:20px;border:1px solid #252525}
+.progress-container{display:none;background:#1a1a1a;padding:15px 20px;border-radius:8px;margin-bottom:20px;border:1px solid #252525;width:100%}
 .progress-container.show{display:block}
 .progress-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .progress-top .label{color:#888;font-size:13px;letter-spacing:1px}
