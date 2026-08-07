@@ -92,7 +92,7 @@ const SONGS=[
 ]
 
 let state={songs:[],a:null,b:null,history:[],compared:[]};
-let ratings = {}; // Глобальная переменная для хранения рейтингов
+let ratings = {};
 
 function save(){localStorage.setItem("asper_x",JSON.stringify(state));}
 
@@ -343,7 +343,6 @@ l.played++;
 addCompared(state.a.id,state.b.id,w.id);
 state.history.push({a:state.a.id,b:state.b.id,winner:w.id,time:Date.now()});
 
-// Сохраняем рейтинг в глобальную переменную
 ratings[w.title] = w.elo;
 ratings[l.title] = l.elo;
 
@@ -373,7 +372,6 @@ function ranking(){
 let list=[...state.songs].filter(s=>!s.skipped).sort((a,b)=>b.elo-a.elo);
 let skipped=state.songs.filter(s=>s.skipped);
 
-// Обновляем глобальный рейтинг
 list.forEach(s => { ratings[s.title] = s.elo; });
 
 app.innerHTML=`
@@ -431,7 +429,7 @@ function sendResultsAndExit() {
         })
     })
     .then(() => {
-        window.location.href = 'https://t.me/AsperX_Your_Top_Songs';
+        window.location.href = 'https://t.me/AsperX_Your_Top_Songs_bot';
     })
     .catch(err => console.error(err));
 }
