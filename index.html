@@ -423,8 +423,6 @@ function sendResultsAndExit(event) {
     const urlParams = new URLSearchParams(window.location.search);
     const userId = urlParams.get('user_id') || 'telegram_user_id';
     
-    console.log('📤 ОТПРАВКА:', { userId, top_90: sorted.slice(0, 3) });
-    
     fetch('https://asperx-bot.onrender.com/save_results', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -433,16 +431,10 @@ function sendResultsAndExit(event) {
             top_90: sorted
         })
     })
-    .then(res => {
-        console.log('📥 СТАТУС ОТВЕТА:', res.status);
-        return res.json();
-    })
-    .then(data => {
-        console.log('✅ ОТВЕТ СЕРВЕРА:', data);
+    .then(() => {
         window.location.href = 'tg://resolve?domain=AsperX_Your_Top_Songs_bot';
     })
-    .catch(err => {
-        console.error('❌ ОШИБКА:', err);
+    .catch(() => {
         window.location.href = 'tg://resolve?domain=AsperX_Your_Top_Songs_bot';
     });
 }
