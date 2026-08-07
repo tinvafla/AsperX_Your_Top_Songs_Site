@@ -423,7 +423,7 @@ function sendResultsAndExit(event) {
     const urlParams = new URLSearchParams(window.location.search);
     const userId = urlParams.get('user_id') || 'telegram_user_id';
     
-    fetch('https://asperx-bot.onrender.com/save_results', {
+    fetch('https://asperx-your-top-songs-bot.onrender.com/save_results', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
