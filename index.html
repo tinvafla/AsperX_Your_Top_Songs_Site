@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Asper X · YOUR TOP</title>
+<title>Asper X · YOUR TOP SONGS</title>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -159,7 +159,7 @@ return progress;
 function home(){
 init();
 app.innerHTML=`
-<h1>ASPER <span class="red">X</span> <span class="light">· YOUR TOP</span></h1>
+<h1>ASPER <span class="red">X</span> <span class="light">· YOUR TOP SONGS</span></h1>
 <button class="btn-start" onclick="start()">▶ НАЧАТЬ</button>
 <div class="info-grid">
 <div class="info-item">
@@ -188,7 +188,6 @@ app.innerHTML=`
 <div>Сделано с <span class="heart">❤️</span> для Asper X и фандома</div>
 <div class="author">
 <a href="https://t.me/AsperX_Your_Top_Songs_bot" target="_blank">✈️ tinvafla</a>
-<a href="https://x.com/tinvafla" target="_blank">🐦 tinvafla</a>
 </div>
 </div>
 `;
@@ -214,7 +213,6 @@ app.innerHTML=`
 <div>Сделано с <span class="heart">❤️</span> для Asper X и фандома</div>
 <div class="author">
 <a href="https://t.me/AsperX_Your_Top_Songs_bot" target="_blank">✈️ tinvafla</a>
-<a href="https://x.com/tinvafla" target="_blank">🐦 tinvafla</a>
 </div>
 </div>
 </div>
@@ -284,7 +282,7 @@ let skipA=state.a.favorite?'disabled':'';
 let skipB=state.b.favorite?'disabled':'';
 
 app.innerHTML=`
-<h1 style="font-size:22px;margin-bottom:15px;">ASPER <span class="red">X</span> <span class="light" style="font-size:16px;">· YOUR TOP</span></h1>
+<h1 style="font-size:22px;margin-bottom:15px;">ASPER <span class="red">X</span> <span class="light" style="font-size:16px;">· YOUR TOP SONGS</span></h1>
 
 <div class="progress-container show">
 <div class="progress-top">
@@ -375,7 +373,7 @@ let skipped=state.songs.filter(s=>s.skipped);
 list.forEach(s => { ratings[s.title] = s.elo; });
 
 app.innerHTML=`
-<h1 style="font-size:24px;">ASPER <span class="red">X</span> <span class="light" style="font-size:18px;">· YOUR TOP</span></h1>
+<h1 style="font-size:24px;">ASPER <span class="red">X</span> <span class="light" style="font-size:18px;">· YOUR TOP SONGS</span></h1>
 <div style="margin:15px 0;text-align:center;color:#666;font-size:13px;">Твой персональный рейтинг</div>
 ${list.map((x,i)=>`
 <div style="background:#1a1a1a;padding:14px 18px;margin:6px 0;border-radius:8px;border:1px solid ${i===0?'#8b0000':i===1?'#4a4a4a':i===2?'#4a3a2a':'#252525'};display:flex;justify-content:space-between;align-items:center;transition:all 0.3s ease;${i===0?'background:rgba(139,0,0,0.08);':''}">
@@ -404,7 +402,6 @@ ${skipped.map(x=>`
 <div>Сделано с <span class="heart">❤️</span> для Asper X и фандома</div>
 <div class="author">
 <a href="https://t.me/AsperX_Your_Top_Songs_bot" target="_blank">✈️ tinvafla</a>
-<a href="https://x.com/tinvafla" target="_blank">🐦 tinvafla</a>
 </div>
 </div>
 `;
