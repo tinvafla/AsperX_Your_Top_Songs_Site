@@ -23,6 +23,9 @@ body{margin:0;background:#1a1a1a;color:#e0e0e0;font-family:'Segoe UI',Arial,sans
 .btn-secondary{background:transparent;border:1px solid #444;color:#aaa;padding:14px;border-radius:8px;width:100%;cursor:pointer;font-size:15px;transition:all 0.3s ease;margin-top:10px}
 .btn-secondary:hover{border-color:#8b0000;color:#8b0000;background:rgba(139,0,0,0.1)}
 
+.btn-continue{background:linear-gradient(135deg,#cc8800,#eebb00);color:#1a1a1a;font-size:16px;font-weight:700;letter-spacing:2px;padding:14px;border:none;border-radius:8px;width:100%;cursor:pointer;transition:all 0.3s ease;text-transform:uppercase;box-shadow:0 4px 25px rgba(204,136,0,0.3);margin-top:10px}
+.btn-continue:hover{background:linear-gradient(135deg,#eebb00,#ffcc33);box-shadow:0 4px 35px rgba(204,136,0,0.5);transform:translateY(-2px)}
+
 .btn-rank{background:transparent;border:1px solid #444;color:#aaa;padding:14px;border-radius:8px;width:100%;cursor:pointer;font-size:15px;letter-spacing:2px;transition:all 0.3s ease;margin-top:10px}
 .btn-rank:hover{border-color:#8b0000;color:#8b0000;background:rgba(139,0,0,0.1)}
 
@@ -80,6 +83,15 @@ body{margin:0;background:#1a1a1a;color:#e0e0e0;font-family:'Segoe UI',Arial,sans
 .skipped-section{margin-top:10px;padding-top:8px;border-top:1px solid #2a2a2a;width:100%}
 .skipped-section h3{color:#555;font-weight:300;text-align:center;font-size:13px;letter-spacing:2px;margin-bottom:4px}
 .skipped-item{color:#555;font-size:13px;padding:3px 8px;background:#151515;border-radius:4px;margin:2px 0;display:flex;justify-content:space-between}
+
+.warning-box{background:#2a1a1a;border:2px solid #8b0000;border-radius:12px;padding:15px;margin:15px 0;text-align:center;width:100%}
+.warning-box .title{color:#ff4444;font-weight:700;font-size:16px;margin-bottom:8px}
+.warning-box .text{color:#ff8888;font-size:14px;margin-bottom:10px}
+.warning-box .subtext{color:#ff8888;font-size:13px;margin-bottom:15px}
+
+.success-box{background:#1a2a1a;border:2px solid #4aa54a;border-radius:12px;padding:12px;margin:15px 0;text-align:center;width:100%}
+.success-box .title{color:#4aa54a;font-weight:700;font-size:15px}
+.success-box .text{color:#88dd88;font-size:13px}
 
 @keyframes heartPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
 
@@ -427,7 +439,7 @@ let skipped=state.songs.filter(s=>s.skipped);
 
 list.forEach(s => { ratings[s.title] = s.elo; });
 
-const isFullComplete = isComplete();
+const fullComplete = isComplete();
 
 app.innerHTML=`
 <div class="logo" style="margin-bottom:8px;">
@@ -455,37 +467,32 @@ ${skipped.map(x=>`
 </div>
 `:''}
 
-${!isFullComplete ? `
-<div style="background:#2a1a1a;border:2px solid #8b0000;border-radius:12px;padding:15px;margin:15px 0;text-align:center;width:100%;">
-<div style="color:#ff4444;font-weight:700;font-size:16px;margin-bottom:8px;">⚠️ ВНИМАНИЕ!</div>
-<div style="color:#ff8888;font-size:14px;margin-bottom:10px;">
-Вы завершили тест ДОСРОЧНО!<br>
-Результат НЕДОСТОВЕРНЫЙ — не все песни были оценены.
-</div>
-<div style="color:#ff8888;font-size:13px;margin-bottom:15px;">
-<strong>Рекомендуется пройти тест до конца.</strong>
-</div>
-<button class="btn-start" onclick="continueTest()" style="max-width:300px;margin:0 auto;font-size:14px;padding:12px;">↻ ПРОДОЛЖИТЬ ТЕСТ</button>
+${!fullComplete ? `
+<div class="warning-box">
+<div class="title">⚠️ ВНИМАНИЕ!</div>
+<div class="text">Вы завершили тест ДОСРОЧНО!<br>Результат НЕДОСТОВЕРНЫЙ — не все песни были оценены.</div>
+<div class="subtext"><strong>Рекомендуется пройти тест до конца.</strong></div>
+<button class="btn-continue" onclick="continueTest()">↻ ПРОДОЛЖИТЬ ТЕСТ</button>
 </div>
 ` : `
-<div style="background:#1a2a1a;border:2px solid #4aa54a;border-radius:12px;padding:12px;margin:15px 0;text-align:center;width:100%;">
-<div style="color:#4aa54a;font-weight:700;font-size:15px;">✅ Тест пройден полностью!</div>
-<div style="color:#88dd88;font-size:13px;">Результаты достоверны и будут учтены в общем рейтинге.</div>
+<div class="success-box">
+<div class="title">✅ Тест пройден полностью!</div>
+<div class="text">Результаты достоверны и будут учтены в общем рейтинге.</div>
 </div>
 `}
 
 <button class="btn-start" onclick="home()" style="margin-top:20px;">← На главную</button>
 <button class="btn-secondary" onclick="resetAll()">🔄 Начать заново</button>
 
-${isFullComplete ? `
+${fullComplete ? `
 <a href="tg://resolve?domain=AsperX_Your_Top_Songs_bot" class="btn-start" style="display:block; text-align:center; text-decoration:none; width:100%; margin-top:10px;" onclick="sendResultsAndExit(event)">
     🔙 Вернуться в бота и сохранить топ
 </a>
 ` : `
-<a href="tg://resolve?domain=AsperX_Your_Top_Songs_bot" class="btn-start" style="display:block; text-align:center; text-decoration:none; width:100%; margin-top:10px; opacity:0.6; background:#333; cursor:default;" onclick="sendResultsAndExit(event)">
+<div style="margin-top:10px;opacity:0.5;cursor:not-allowed;background:#333;padding:18px;border-radius:8px;text-align:center;color:#888;width:100%;font-size:16px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">
     ⛔ Вернуться в бота (тест не пройден)
-</a>
-<div style="color:#666;font-size:12px;text-align:center;margin-top:5px;">Пройти тест полностью, чтобы сохранить результаты</div>
+</div>
+<div style="color:#666;font-size:12px;text-align:center;margin-top:5px;">Пройдите тест полностью, чтобы сохранить результаты</div>
 `}
 
 <div class="footer" style="margin-top:30px;">
@@ -498,7 +505,6 @@ ${isFullComplete ? `
 }
 
 function continueTest() {
-    // Возвращаемся к сравнению
     if(state.a && state.b) {
         render();
     } else {
@@ -516,7 +522,6 @@ home();
 function sendResultsAndExit(event) {
     event.preventDefault();
     
-    // Проверяем, пройден ли тест полностью
     if (!isComplete()) {
         alert('⚠️ Тест не пройден полностью! Результаты не будут сохранены.\nПройдите тест до конца.');
         return;
