@@ -392,14 +392,13 @@ ${skipped.map(x=>`
 `).join('')}
 </div>
 `:''}
+
 <button class="btn-start" onclick="home()" style="margin-top:20px;">← На главную</button>
 <button class="btn-secondary" onclick="resetAll()">🔄 Начать заново</button>
 
-<div style="display:flex; flex-direction:column; gap:10px; margin-top:20px; max-width:400px; margin-left:auto; margin-right:auto;">
-    <button onclick="sendResultsAndExit()" class="btn-start" style="width:100%; text-align:center;">
-        🔙 Вернуться в бота и сохранить топ
-    </button>
-</div>
+<a href="https://t.me/AsperX_Your_Top_Songs_bot" target="_blank" class="btn-start" style="display:block; text-align:center; text-decoration:none; width:100%; margin-top:10px;" onclick="sendResultsAndExit(event)">
+    🔙 Вернуться в бота и сохранить топ
+</a>
 
 <div class="footer" style="margin-top:30px;">
 <div>Сделано с <span class="heart">❤️</span> для Asper X и фандома</div>
@@ -418,46 +417,17 @@ home();
 }
 }
 
-function ranking(){
-let list=[...state.songs].filter(s=>!s.skipped).sort((a,b)=>b.elo-a.elo);
-let skipped=state.songs.filter(s=>s.skipped);
-
-list.forEach(s => { ratings[s.title] = s.elo; });
-
-app.innerHTML=`
-<h1 style="font-size:24px;">ASPER <span class="red">X</span> <span class="light" style="font-size:18px;">· YOUR TOP</span></h1>
-<div style="margin:15px 0;text-align:center;color:#666;font-size:13px;">Твой персональный рейтинг</div>
-${list.map((x,i)=>`
-<div style="background:#1a1a1a;padding:14px 18px;margin:6px 0;border-radius:8px;border:1px solid ${i===0?'#8b0000':i===1?'#4a4a4a':i===2?'#4a3a2a':'#252525'};display:flex;justify-content:space-between;align-items:center;transition:all 0.3s ease;${i===0?'background:rgba(139,0,0,0.08);':''}">
-<span><span style="color:#555;font-weight:300;margin-right:12px;min-width:30px;display:inline-block;">${i+1}.</span><span style="color:#e0e0e0;font-weight:500;">${x.title}</span>${x.favorite?'<span style="color:#ff0044;margin-left:10px;">♥</span>':''}</span>
-</div>
-`).join('')}
-${skipped.length>0?`
-<div style="margin-top:20px;padding-top:15px;border-top:1px solid #1a1a1a;">
-<h3 style="color:#444;font-weight:300;text-align:center;font-size:14px;letter-spacing:2px;margin-bottom:10px;">— ПРОПУЩЕННЫЕ —</h3>
-${skipped.map(x=>`
-<div style="color:#444;font-size:13px;padding:6px 12px;background:#111;border-radius:6px;margin:3px 0;display:flex;justify-content:space-between;">
-<span>${x.title}</span>${x.favorite?'<span style="color:#ff0044;">♥</span>':''}
-</div>
-`).join('')}
-</div>
-`:''}
-
-<button class="btn-start" onclick="home()" style="margin-top:20px;">← На главную</button>
-<button class="btn-secondary" onclick="resetAll()">🔄 Начать заново</button>
-
-<a href="https://t.me/AsperX_Your_Top_Songs_bot" target="_blank" class="btn-start" style="display:block; text-align:center; text-decoration:none; width:100%; margin-top:10px;" onclick="sendResultsAndExit(event)">
-    🔙 Вернуться в бота и сохранить топ
-</a>
-
-<div class="footer" style="margin-top:30px;">
-<div>Сделано с <span class="heart">❤️</span> для Asper X и фандома</div>
-<div class="author">
-<a href="https://t.me/tinvafla" target="_blank">✈️ tinvafla</a>
-<a href="https://x.com/tinvafla" target="_blank">🐦 tinvafla</a>
-</div>
-</div>
-`;
+function sendResultsAndExit(event) {
+    const sorted = Object.entries(ratings).sort((a,b) => b[1] - a[1]);
+    fetch('https://asperx-bot.onrender.com/save_results', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            user_id: 'telegram_user_id',
+            top_90: sorted
+        })
+    })
+    .catch(err => console.error(err));
 }
 
 init();
