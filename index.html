@@ -427,6 +427,8 @@ let skipped=state.songs.filter(s=>s.skipped);
 
 list.forEach(s => { ratings[s.title] = s.elo; });
 
+const isFullComplete = isComplete();
+
 app.innerHTML=`
 <div class="logo" style="margin-bottom:8px;">
 <div class="main" style="font-size:22px;letter-spacing:2px;"><span class="big-letter" style="font-size:28px;">A</span>SPER <span class="big-letter" style="font-size:28px;">X</span></div>
@@ -453,12 +455,38 @@ ${skipped.map(x=>`
 </div>
 `:''}
 
+${!isFullComplete ? `
+<div style="background:#2a1a1a;border:2px solid #8b0000;border-radius:12px;padding:15px;margin:15px 0;text-align:center;width:100%;">
+<div style="color:#ff4444;font-weight:700;font-size:16px;margin-bottom:8px;">⚠️ ВНИМАНИЕ!</div>
+<div style="color:#ff8888;font-size:14px;margin-bottom:10px;">
+Вы завершили тест ДОСРОЧНО!<br>
+Результат НЕДОСТОВЕРНЫЙ — не все песни были оценены.
+</div>
+<div style="color:#ff8888;font-size:13px;margin-bottom:15px;">
+<strong>Рекомендуется пройти тест до конца.</strong>
+</div>
+<button class="btn-start" onclick="continueTest()" style="max-width:300px;margin:0 auto;font-size:14px;padding:12px;">↻ ПРОДОЛЖИТЬ ТЕСТ</button>
+</div>
+` : `
+<div style="background:#1a2a1a;border:2px solid #4aa54a;border-radius:12px;padding:12px;margin:15px 0;text-align:center;width:100%;">
+<div style="color:#4aa54a;font-weight:700;font-size:15px;">✅ Тест пройден полностью!</div>
+<div style="color:#88dd88;font-size:13px;">Результаты достоверны и будут учтены в общем рейтинге.</div>
+</div>
+`}
+
 <button class="btn-start" onclick="home()" style="margin-top:20px;">← На главную</button>
 <button class="btn-secondary" onclick="resetAll()">🔄 Начать заново</button>
 
+${isFullComplete ? `
 <a href="tg://resolve?domain=AsperX_Your_Top_Songs_bot" class="btn-start" style="display:block; text-align:center; text-decoration:none; width:100%; margin-top:10px;" onclick="sendResultsAndExit(event)">
     🔙 Вернуться в бота и сохранить топ
 </a>
+` : `
+<a href="tg://resolve?domain=AsperX_Your_Top_Songs_bot" class="btn-start" style="display:block; text-align:center; text-decoration:none; width:100%; margin-top:10px; opacity:0.6; background:#333; cursor:default;" onclick="sendResultsAndExit(event)">
+    ⛔ Вернуться в бота (тест не пройден)
+</a>
+<div style="color:#666;font-size:12px;text-align:center;margin-top:5px;">Пройти тест полностью, чтобы сохранить результаты</div>
+`}
 
 <div class="footer" style="margin-top:30px;">
 <div>Сделано с <span class="heart">❤️</span> для Asper X и фандома</div>
@@ -467,6 +495,15 @@ ${skipped.map(x=>`
 </div>
 </div>
 `;
+}
+
+function continueTest() {
+    // Возвращаемся к сравнению
+    if(state.a && state.b) {
+        render();
+    } else {
+        start();
+    }
 }
 
 function resetAll(){
@@ -478,6 +515,13 @@ home();
 
 function sendResultsAndExit(event) {
     event.preventDefault();
+    
+    // Проверяем, пройден ли тест полностью
+    if (!isComplete()) {
+        alert('⚠️ Тест не пройден полностью! Результаты не будут сохранены.\nПройдите тест до конца.');
+        return;
+    }
+    
     const sorted = Object.entries(ratings).sort((a,b) => b[1] - a[1]);
     const urlParams = new URLSearchParams(window.location.search);
     const userId = urlParams.get('user_id') || 'telegram_user_id';
@@ -487,7 +531,8 @@ function sendResultsAndExit(event) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             user_id: userId,
-            top_90: sorted
+            top_90: sorted,
+            is_complete: true
         })
     })
     .then(() => {
