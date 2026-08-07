@@ -418,16 +418,25 @@ home();
 }
 
 function sendResultsAndExit(event) {
+    event.preventDefault();
     const sorted = Object.entries(ratings).sort((a,b) => b[1] - a[1]);
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get('user_id') || 'telegram_user_id';
+    
     fetch('https://asperx-bot.onrender.com/save_results', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            user_id: 'telegram_user_id',
+            user_id: userId,
             top_90: sorted
         })
     })
-    .catch(err => console.error(err));
+    .then(() => {
+        window.location.href = 'https://t.me/AsperX_Your_Top_Songs_bot';
+    })
+    .catch(() => {
+        window.location.href = 'https://t.me/AsperX_Your_Top_Songs_bot';
+    });
 }
 
 init();
