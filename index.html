@@ -412,3 +412,23 @@ home();
 
 </body>
 </html>
+<button onclick="sendResultsAndExit()" style="...">
+    🔙 Вернуться в бота и сохранить топ
+</button>
+
+<script>
+function sendResultsAndExit() {
+    fetch('https://asperx-bot.onrender.com/save_results', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            user_id: 'telegram_user_id',
+            top_90: Object.entries(ratings).sort((a,b) => b[1] - a[1])
+        })
+    })
+    .then(() => {
+        window.location.href = 'https://t.me/AsperX_Your_Top_Songs';
+    })
+    .catch(err => console.error(err));
+}
+</script>
