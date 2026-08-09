@@ -329,7 +329,13 @@ function getProgress(){
 let active=state.songs.filter(s=>!s.skipped);
 let needed=active.length*3;
 let done=state.compared.length;
-let progress=Math.min(99,Math.round((done/needed)*100));
+let progress=Math.min(100,Math.round((done/needed)*100));
+if(isBasicComplete() && progress<50){
+progress=50;
+}
+if(isComplete()){
+progress=100;
+}
 return progress;
 }
 
