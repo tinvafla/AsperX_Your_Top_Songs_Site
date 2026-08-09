@@ -43,6 +43,7 @@ body{margin:0;background:#1a1a1a;color:#e0e0e0;font-family:'Segoe UI',Arial,sans
 .footer .author{color:#888;font-size:13px;margin-top:5px;letter-spacing:1px;display:flex;justify-content:center;gap:12px;align-items:center}
 .footer .author a{color:#999;text-decoration:none;transition:all 0.3s ease;display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;background:#1a1a1a;border:1px solid #333}
 .footer .author a:hover{color:#8b0000;border-color:#8b0000;transform:scale(1.05)}
+.footer .version{color:#333;font-size:11px;font-weight:300;letter-spacing:2px;margin-top:6px;font-family:monospace}
 
 .progress-container{display:none;background:#1f1f1f;padding:15px 20px;border-radius:8px;margin-bottom:20px;border:1px solid #333;width:100%}
 .progress-container.show{display:block}
@@ -96,7 +97,7 @@ body{margin:0;background:#1a1a1a;color:#e0e0e0;font-family:'Segoe UI',Arial,sans
 50%{transform:scale(1.08)}
 }
 
-@media(max-width:480px){#app{padding:10px}.logo .main{font-size:32px}.logo .main .big-letter{font-size:40px}.logo .sub{font-size:14px;letter-spacing:4px}.song-card .title{font-size:17px;height:50px}.song-card .title.small{font-size:14px}.song-card .title.xsmall{font-size:12px}.btn-group button{height:38px;font-size:13px}.fav-btn,.skip-btn{font-size:16px}.info-item{padding:10px 12px}.info-item .text .main{font-size:13px}.footer .author{flex-wrap:wrap}}
+@media(max-width:480px){#app{padding:10px}.logo .main{font-size:32px}.logo .main .big-letter{font-size:40px}.logo .sub{font-size:14px;letter-spacing:4px}.song-card .title{font-size:17px;height:50px}.song-card .title.small{font-size:14px}.song-card .title.xsmall{font-size:12px}.btn-group button{height:38px;font-size:13px}.fav-btn,.skip-btn{font-size:16px}.info-item{padding:10px 12px}.info-item .text .main{font-size:13px}.footer .author{flex-wrap:wrap}.footer .version{font-size:10px}}
 </style>
 
 </head>
@@ -106,6 +107,8 @@ body{margin:0;background:#1a1a1a;color:#e0e0e0;font-family:'Segoe UI',Arial,sans
 <div id="app"></div>
 
 <script>
+
+const VERSION = "1.0.0";
 
 const SONGS=[
     "Bad Trip", "Monsta", "Plague (feat. Ctrl+Freak)", "Sorry Not Sorry", "Stellar",
@@ -144,6 +147,7 @@ let state={
     voteHistory:[]
 };
 let ratings = {};
+let cachedProgress = 0;
 
 function save(){localStorage.setItem("asper_x",JSON.stringify(state));}
 
@@ -171,6 +175,7 @@ state.voteHistory=[];
 state.a=null;
 state.b=null;
 ratings = {};
+cachedProgress = 0;
 save();
 }
 
@@ -327,16 +332,26 @@ return true;
 
 function getProgress(){
 let active=state.songs.filter(s=>!s.skipped);
+if(active.length<2){
+cachedProgress=100;
+return 100;
+}
 let needed=active.length*3;
 let done=state.compared.length;
-let progress=Math.min(100,Math.round((done/needed)*100));
+let progress=Math.min(99,Math.round((done/needed)*100));
 if(isBasicComplete() && progress<50){
 progress=50;
 }
 if(isComplete()){
 progress=100;
 }
-return progress;
+if(progress>=100 && !isComplete()){
+progress=99;
+}
+if(progress>cachedProgress){
+cachedProgress=progress;
+}
+return cachedProgress;
 }
 
 function saveVoteState(){
@@ -578,7 +593,7 @@ state.compared=state.compared.filter(p=>p.a!==s.id&&p.b!==s.id);
 if(state.a&&state.a.id===s.id)state.a=null;
 if(state.b&&state.b.id===s.id)state.b=null;
 save();
-if(isBasicComplete() && isComplete()){showComplete();}else{pair();}
+pair();
 }
 
 function home(){
@@ -619,6 +634,7 @@ app.innerHTML=`
 <div class="author">
 <a href="https://t.me/AsperX_Your_Top_Songs_bot" target="_blank">✈️ tinvafla</a>
 </div>
+<div class="version">${VERSION}</div>
 </div>
 `;
 }
@@ -644,6 +660,7 @@ app.innerHTML=`
 <div class="author">
 <a href="https://t.me/AsperX_Your_Top_Songs_bot" target="_blank">✈️ tinvafla</a>
 </div>
+<div class="version">${VERSION}</div>
 </div>
 </div>
 `;
@@ -704,6 +721,9 @@ let html=`
 <span>📊 ДОСРОЧНЫЕ РЕЗУЛЬТАТЫ</span>
 <span class="sub-text">⚠️ Тест не завершён, результат может быть неточным</span>
 </button>
+<div class="footer" style="margin-top:20px;padding-top:10px;">
+<div class="version">${VERSION}</div>
+</div>
 `;
 app.innerHTML=html;
 }
@@ -788,6 +808,7 @@ ${fullComplete?`
 <div class="author">
 <a href="https://t.me/AsperX_Your_Top_Songs_bot" target="_blank">✈️ tinvafla</a>
 </div>
+<div class="version">${VERSION}</div>
 </div>
 `;
 }
