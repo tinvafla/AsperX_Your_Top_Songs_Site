@@ -294,6 +294,17 @@ return false;
 return true;
 }
 
+function isBasicComplete(){
+let active=state.songs.filter(s=>!s.skipped);
+if(active.length<2)return true;
+for(let s of active){
+if(s.played<3){
+return false;
+}
+}
+return true;
+}
+
 function isComplete(){
 let active=state.songs.filter(s=>!s.skipped);
 if(active.length<2)return true;
@@ -414,7 +425,7 @@ loser.elo=Math.round(oldLoserElo+(loser.elo-oldLoserElo)*reduction);
 function pair(){
 let active=state.songs.filter(s=>!s.skipped);
 if(active.length<2){showComplete();return;}
-if(isComplete()){showComplete();return;}
+if(isBasicComplete() && isComplete()){showComplete();return;}
 let sorted=[...active].sort((a,b)=>b.elo-a.elo);
 let top5=sorted.slice(0,5);
 let top10=sorted.slice(0,10);
@@ -543,7 +554,7 @@ state.history.push({a:state.a.id,b:state.b.id,winner:w.id,time:Date.now()});
 ratings[w.title]=w.elo;
 ratings[l.title]=l.elo;
 save();
-if(isComplete()){showComplete();}else{pair();}
+if(isBasicComplete() && isComplete()){showComplete();}else{pair();}
 }
 
 function fav(x){
@@ -561,7 +572,7 @@ state.compared=state.compared.filter(p=>p.a!==s.id&&p.b!==s.id);
 if(state.a&&state.a.id===s.id)state.a=null;
 if(state.b&&state.b.id===s.id)state.b=null;
 save();
-if(isComplete()){showComplete();}else{pair();}
+if(isBasicComplete() && isComplete()){showComplete();}else{pair();}
 }
 
 function home(){
@@ -610,7 +621,7 @@ function start(){
 if(!state.songs.length)init();
 let active=state.songs.filter(s=>!s.skipped);
 if(active.length<2){showComplete();return;}
-if(isComplete()){showComplete();return;}
+if(isBasicComplete() && isComplete()){showComplete();return;}
 pair();
 }
 
@@ -719,15 +730,14 @@ app.innerHTML=`
 </div>
 </div>
 
-${!fullComplete ? `
+${forced && !fullComplete ? `
 <div class="warning-box">
 <div class="title">⚠️ ДОСРОЧНЫЕ РЕЗУЛЬТАТЫ</div>
 <div class="text">Тест не завершён, результат может быть неточным.</div>
 <div class="subtext"><strong>Рекомендуется пройти тест до конца.</strong></div>
 <button class="btn-continue" onclick="continueTest()">↻ ПРОДОЛЖИТЬ ТЕСТ</button>
 </div>
-` :
-`
+` : `
 <div class="success-box">
 <div class="title">✅ Тест пройден полностью!</div>
 <div class="text">Результаты достоверны и будут учтены в общем рейтинге.</div>
