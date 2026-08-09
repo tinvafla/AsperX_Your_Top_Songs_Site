@@ -108,7 +108,7 @@ body{margin:0;background:#1a1a1a;color:#e0e0e0;font-family:'Segoe UI',Arial,sans
 
 <script>
 
-const VERSION = "1.0.0";
+const VERSION = "1.0.1";
 
 const SONGS=[
     "Bad Trip", "Monsta", "Plague (feat. Ctrl+Freak)", "Sorry Not Sorry", "Stellar",
@@ -443,10 +443,8 @@ loser.elo=Math.round(oldLoserElo+(loser.elo-oldLoserElo)*reduction);
 }
 }
 
-function pair(){
+function findPair(){
 let active=state.songs.filter(s=>!s.skipped);
-if(active.length<2){showComplete();return;}
-if(isBasicComplete() && isComplete()){showComplete();return;}
 let sorted=[...active].sort((a,b)=>b.elo-a.elo);
 let top5=sorted.slice(0,5);
 let top10=sorted.slice(0,10);
@@ -459,9 +457,7 @@ for(let j=i+1;j<zeroWins.length;j++){
 if(!isCompared(zeroWins[i].id,zeroWins[j].id)){
 state.a=zeroWins[i];
 state.b=zeroWins[j];
-save();
-render();
-return;
+return true;
 }
 }
 }
@@ -477,34 +473,29 @@ for(let opp of shuffledOpps){
 if(!isCompared(s.id,opp.id)){
 state.a=s;
 state.b=opp;
-save();
-render();
-return;
+return true;
 }
 }
 }
 }
 }
 
-let minPlayed=Infinity;
-let candidates=[];
+let eloGroups={};
 for(let s of active){
-if(s.played<minPlayed){
-minPlayed=s.played;
-candidates=[s];
-}else if(s.played===minPlayed){
-candidates.push(s);
+let eloKey=Math.round(s.elo/5)*5;
+if(!eloGroups[eloKey]) eloGroups[eloKey]=[];
+eloGroups[eloKey].push(s);
 }
+for(let key in eloGroups){
+let group=eloGroups[key];
+if(group.length>=2){
+for(let i=0;i<group.length;i++){
+for(let j=i+1;j<group.length;j++){
+if(!isCompared(group[i].id,group[j].id)){
+state.a=group[i];
+state.b=group[j];
+return true;
 }
-if(candidates.length>=2){
-for(let i=0;i<candidates.length;i++){
-for(let j=i+1;j<candidates.length;j++){
-if(!isCompared(candidates[i].id,candidates[j].id)){
-state.a=candidates[i];
-state.b=candidates[j];
-save();
-render();
-return;
 }
 }
 }
@@ -517,9 +508,7 @@ for(let withFav of songsWithFav){
 if(noFav.elo>withFav.elo&&!isCompared(noFav.id,withFav.id)){
 state.a=noFav;
 state.b=withFav;
-save();
-render();
-return;
+return true;
 }
 }
 }
@@ -528,9 +517,7 @@ for(let i=0;i<top20.length-1;i++){
 if(!isCompared(top20[i].id,top20[i+1].id)){
 state.a=top20[i];
 state.b=top20[i+1];
-save();
-render();
-return;
+return true;
 }
 }
 
@@ -539,9 +526,7 @@ for(let j=i+1;j<top10.length;j++){
 if(!isCompared(top10[i].id,top10[j].id)){
 state.a=top10[i];
 state.b=top10[j];
-save();
-render();
-return;
+return true;
 }
 }
 }
@@ -551,14 +536,21 @@ for(let j=i+1;j<top5.length;j++){
 if(!isCompared(top5[i].id,top5[j].id)){
 state.a=top5[i];
 state.b=top5[j];
-save();
-render();
-return;
+return true;
 }
 }
 }
 
-showComplete();
+return false;
+}
+
+function pair(){
+let active=state.songs.filter(s=>!s.skipped);
+if(active.length<2){showComplete();return;}
+let found=findPair();
+if(!found){showComplete();return;}
+save();
+render();
 }
 
 function vote(x){
@@ -575,7 +567,7 @@ state.history.push({a:state.a.id,b:state.b.id,winner:w.id,time:Date.now()});
 ratings[w.title]=w.elo;
 ratings[l.title]=l.elo;
 save();
-if(isBasicComplete() && isComplete()){showComplete();}else{pair();}
+pair();
 }
 
 function fav(x){
@@ -643,7 +635,6 @@ function start(){
 if(!state.songs.length)init();
 let active=state.songs.filter(s=>!s.skipped);
 if(active.length<2){showComplete();return;}
-if(isBasicComplete() && isComplete()){showComplete();return;}
 pair();
 }
 
@@ -735,11 +726,6 @@ list.forEach(s=>{ratings[s.title]=s.elo;});
 const fullComplete=isComplete();
 const progress=getProgress();
 
-if(!forced && !fullComplete){
-showToast('⚠️ Тест ещё не пройден! Продолжите сравнения.');
-return;
-}
-
 app.innerHTML=`
 <div class="logo" style="margin-bottom:8px;">
 <div class="main" style="font-size:22px;letter-spacing:2px;"><span class="big-letter" style="font-size:28px;">A</span>SPER <span class="big-letter" style="font-size:28px;">X</span></div>
@@ -756,7 +742,7 @@ app.innerHTML=`
 </div>
 </div>
 
-${forced && !fullComplete ? `
+${!fullComplete ? `
 <div class="warning-box">
 <div class="title">⚠️ ДОСРОЧНЫЕ РЕЗУЛЬТАТЫ</div>
 <div class="text">Тест не завершён, результат может быть неточным.</div>
