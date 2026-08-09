@@ -64,7 +64,7 @@ body{margin:0;background:#1a1a1a;color:#e0e0e0;font-family:'Segoe UI',Arial,sans
 
 .fav-btn{background:transparent;border:1px solid #444;color:#888;font-size:20px;padding:0 8px}
 .fav-btn:hover{border-color:#8b0000;color:#8b0000;transform:scale(1.05)}
-.fav-btn.active{color:#ff0044;border-color:#ff0044;background:rgba(255,0,68,0.15);text-shadow:0 0 30px rgba(255,0,68,0.4);animation:heartPulse 1.5s ease-in-out infinite}
+.fav-btn.active{color:#ff0044;border-color:#ff0044;background:rgba(255,0,68,0.15);animation:heartPulse 2s ease-in-out infinite}
 .fav-btn.active:hover{background:rgba(255,0,68,0.25);transform:scale(1.1)}
 
 .skip-btn{background:transparent;border:1px solid #333;color:#666;font-size:14px;padding:0 8px}
@@ -91,7 +91,10 @@ body{margin:0;background:#1a1a1a;color:#e0e0e0;font-family:'Segoe UI',Arial,sans
 .success-box .title{color:#4aa54a;font-weight:700;font-size:16px}
 .success-box .text{color:#88dd88;font-size:14px}
 
-@keyframes heartPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+@keyframes heartPulse{
+0%,100%{transform:scale(1)}
+50%{transform:scale(1.08)}
+}
 
 @media(max-width:480px){#app{padding:10px}.logo .main{font-size:32px}.logo .main .big-letter{font-size:40px}.logo .sub{font-size:14px;letter-spacing:4px}.song-card .title{font-size:17px;height:50px}.song-card .title.small{font-size:14px}.song-card .title.xsmall{font-size:12px}.btn-group button{height:38px;font-size:13px}.fav-btn,.skip-btn{font-size:16px}.info-item{padding:10px 12px}.info-item .text .main{font-size:13px}.footer .author{flex-wrap:wrap}}
 </style>
@@ -313,16 +316,7 @@ return true;
 
 function getProgress(){
 let active=state.songs.filter(s=>!s.skipped);
-let needed=0;
-let allSongsDone=allSongsPlayed();
-if(!allSongsDone){
-needed=active.length*3;
-}else{
-for(let s of active){
-needed+=getMinComparisons(s);
-}
-needed=Math.ceil(needed/2);
-}
+let needed=active.length*3;
 let done=state.compared.length;
 let progress=Math.min(99,Math.round((done/needed)*100));
 return progress;
@@ -626,7 +620,7 @@ app.innerHTML=`
 <div style="font-size:64px;margin-bottom:20px;">🎯</div>
 <div class="logo"><div class="main" style="font-size:32px;"><span class="big-letter">A</span>SPER <span class="big-letter">X</span></div></div>
 <p style="color:#aaa;margin-bottom:30px;font-size:16px;">Твой топ готов!</p>
-<button class="btn-start" onclick="ranking()" style="max-width:400px;margin:0 auto;">🏆 Рейтинг</button>
+<button class="btn-start" onclick="ranking(false)" style="max-width:400px;margin:0 auto;">🏆 ИТОГОВЫЙ РЕЙТИНГ</button>
 <button class="btn-secondary" onclick="resetAll()" style="max-width:400px;margin:10px auto 0 auto;">🔄 Начать заново</button>
 <div class="footer" style="margin-top:30px;">
 <div>Сделано с <span class="heart">❤️</span> для Asper X и фандома</div>
@@ -689,38 +683,57 @@ let html=`
 <span style="font-size:14px;">↩️</span> Назад
 </button>
 </div>
-<button class="btn-rank-warning" onclick="ranking()">
-<span>🏆 Рейтинг</span>
-<span class="sub-text">⚠️ Досрочное завершение может привести к неточности результатов. Пожалуйста, не учитывайте такие результаты в общем рейтинге.</span>
+<button class="btn-rank-warning" onclick="ranking(true)">
+<span>📊 ДОСРОЧНЫЕ РЕЗУЛЬТАТЫ</span>
+<span class="sub-text">⚠️ Тест не завершён, результат может быть неточным</span>
 </button>
 `;
 app.innerHTML=html;
 }
 
-function ranking(){
+function ranking(forced){
 let list=[...state.songs].filter(s=>!s.skipped).sort((a,b)=>b.elo-a.elo);
 let skipped=state.songs.filter(s=>s.skipped);
 list.forEach(s=>{ratings[s.title]=s.elo;});
 const fullComplete=isComplete();
+const progress=getProgress();
+
+if(!forced && !fullComplete){
+showToast('⚠️ Тест ещё не пройден! Продолжите сравнения.');
+return;
+}
+
 app.innerHTML=`
 <div class="logo" style="margin-bottom:8px;">
 <div class="main" style="font-size:22px;letter-spacing:2px;"><span class="big-letter" style="font-size:28px;">A</span>SPER <span class="big-letter" style="font-size:28px;">X</span></div>
 <div class="sub" style="font-size:13px;letter-spacing:3px;">YOUR TOP SONGS</div>
 </div>
-${!fullComplete?`
+
+<div class="progress-container show">
+<div class="progress-top">
+<span class="label">Оценка</span>
+<span class="percent">${progress}%</span>
+</div>
+<div class="progress-bar">
+<div class="progress-fill" style="width:${progress}%"></div>
+</div>
+</div>
+
+${!fullComplete ? `
 <div class="warning-box">
-<div class="title">⚠️ ВНИМАНИЕ!</div>
-<div class="text">Вы завершили тест ДОСРОЧНО!<br>Результат НЕДОСТОВЕРНЫЙ — не все песни были оценены.</div>
+<div class="title">⚠️ ДОСРОЧНЫЕ РЕЗУЛЬТАТЫ</div>
+<div class="text">Тест не завершён, результат может быть неточным.</div>
 <div class="subtext"><strong>Рекомендуется пройти тест до конца.</strong></div>
 <button class="btn-continue" onclick="continueTest()">↻ ПРОДОЛЖИТЬ ТЕСТ</button>
 </div>
-`:
+` :
 `
 <div class="success-box">
 <div class="title">✅ Тест пройден полностью!</div>
 <div class="text">Результаты достоверны и будут учтены в общем рейтинге.</div>
 </div>
 `}
+
 <div style="margin:8px 0;text-align:center;color:#aaa;font-size:13px;">Твой персональный рейтинг</div>
 <div class="ranking-list">
 ${list.map((x,i)=>`
