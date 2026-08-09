@@ -181,6 +181,16 @@ if(id1>id2){let t=id1;id1=id2;id2=t;}
 state.compared.push({a:id1,b:id2,winner:winner});
 }
 
+function allSongsHaveWin(){
+let active=state.songs.filter(s=>!s.skipped);
+for(let s of active){
+if(s.wins===0){
+return false;
+}
+}
+return true;
+}
+
 function allSongsPlayed(){
 let active=state.songs.filter(s=>!s.skipped);
 for(let s of active){
@@ -213,13 +223,40 @@ if(song.favorite&&position<=20){k=k*0.85;}
 return Math.round(k);
 }
 
+function isFavComplete(){
+let active=state.songs.filter(s=>!s.skipped);
+let sorted=[...active].sort((a,b)=>b.elo-a.elo);
+let songsWithFav=active.filter(s=>s.favorite);
+let songsWithoutFav=active.filter(s=>!s.favorite);
+for(let noFav of songsWithoutFav){
+let noFavIndex=sorted.indexOf(noFav);
+let highestFav=null;
+let highestFavIndex=Infinity;
+for(let withFav of songsWithFav){
+let idx=sorted.indexOf(withFav);
+if(idx<highestFavIndex){
+highestFavIndex=idx;
+highestFav=withFav;
+}
+}
+if(noFavIndex < highestFavIndex){
+if(highestFavIndex - noFavIndex > 1){
+return false;
+}
+if(!isCompared(noFav.id, highestFav.id)){
+return false;
+}
+}
+}
+return true;
+}
+
 function isTopComplete(){
 let active=state.songs.filter(s=>!s.skipped);
 let sorted=[...active].sort((a,b)=>b.elo-a.elo);
 let top5=sorted.slice(0,5);
 let top10=sorted.slice(0,10);
 let top20=sorted.slice(0,20);
-
 for(let i=0;i<top5.length;i++){
 for(let j=i+1;j<top5.length;j++){
 if(!isCompared(top5[i].id,top5[j].id)){
@@ -227,7 +264,6 @@ return false;
 }
 }
 }
-
 for(let i=0;i<top10.length;i++){
 for(let j=i+1;j<top10.length;j++){
 if(!isCompared(top10[i].id,top10[j].id)){
@@ -235,13 +271,11 @@ return false;
 }
 }
 }
-
 for(let song of top20){
 if(song.played<7){
 return false;
 }
 }
-
 for(let i=0;i<top20.length-1;i++){
 if(!isCompared(top20[i].id,top20[i+1].id)){
 if(Math.abs(top20[i].elo-top20[i+1].elo)<100){
@@ -249,34 +283,10 @@ return false;
 }
 }
 }
-
 for(let song of top10){
 let minMatches=song.elo>1150?10:8;
 if(song.played<minMatches){
 return false;
-}
-}
-
-return true;
-}
-
-function isFavComplete(){
-let active=state.songs.filter(s=>!s.skipped);
-let favoriteSongs=active.filter(s=>s.favorite);
-for(let song of favoriteSongs){
-if(song.played<5){
-return false;
-}
-}
-let songsWithFav=active.filter(s=>s.favorite);
-let songsWithoutFav=active.filter(s=>!s.favorite);
-for(let noFav of songsWithoutFav){
-for(let withFav of songsWithFav){
-if(noFav.elo>withFav.elo){
-if(!isCompared(noFav.id,withFav.id)){
-return false;
-}
-}
 }
 }
 return true;
@@ -285,6 +295,11 @@ return true;
 function isComplete(){
 let active=state.songs.filter(s=>!s.skipped);
 if(active.length<2)return true;
+for(let s of active){
+if(s.wins===0){
+return false;
+}
+}
 for(let s of active){
 if(s.played<getMinComparisons(s)){
 return false;
@@ -414,13 +429,34 @@ let top5=sorted.slice(0,5);
 let top10=sorted.slice(0,10);
 let top20=sorted.slice(0,20);
 
+if(!allSongsHaveWin()){
+let zeros=active.filter(s=>s.wins===0);
+if(zeros.length>=2){
+state.a=zeros[0];
+state.b=zeros[1];
+save();
+render();
+return;
+} else if(zeros.length===1){
+let zero=zeros[0];
+let opponents=active.filter(s=>s.id!==zero.id);
+opponents.sort((a,b)=>a.elo-b.elo);
+state.a=zero;
+state.b=opponents[0];
+save();
+render();
+return;
+}
+}
+
 if(!allSongsPlayed()){
-for(let s of active){
+let shuffled=[...active].sort(()=>Math.random()-0.5);
+for(let s of shuffled){
 if(s.played<3){
 let opponents=active.filter(x=>x.id!==s.id&&!isCompared(s.id,x.id));
 if(opponents.length>0){
 state.a=s;
-opponents.sort((a,b)=>a.played-b.played);
+opponents.sort(()=>Math.random()-0.5);
 state.b=opponents[0];
 save();
 render();
@@ -457,18 +493,6 @@ if(pairFound){
 save();
 render();
 return;
-}
-}
-
-for(let i=0;i<active.length;i++){
-for(let j=i+1;j<active.length;j++){
-if(!isCompared(active[i].id,active[j].id)){
-state.a=active[i];
-state.b=active[j];
-save();
-render();
-return;
-}
 }
 }
 
@@ -513,6 +537,18 @@ for(let j=i+1;j<top5.length;j++){
 if(!isCompared(top5[i].id,top5[j].id)){
 state.a=top5[i];
 state.b=top5[j];
+save();
+render();
+return;
+}
+}
+}
+
+for(let i=0;i<active.length;i++){
+for(let j=i+1;j<active.length;j++){
+if(!isCompared(active[i].id,active[j].id)){
+state.a=active[i];
+state.b=active[j];
 save();
 render();
 return;
