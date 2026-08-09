@@ -181,9 +181,18 @@ if(id1>id2){let t=id1;id1=id2;id2=t;}
 state.compared.push({a:id1,b:id2,winner:winner});
 }
 
+function allSongsPlayed(){
+let active=state.songs.filter(s=>!s.skipped);
+for(let s of active){
+if(s.played<3){
+return false;
+}
+}
+return true;
+}
+
 function getMinComparisons(song){
 let base=3;
-if(song.favorite&&song.played<5)return 8;
 if(song.elo>1100)return 8;
 if(song.elo>1050)return 6;
 if(song.elo>950)return 5;
@@ -234,6 +243,11 @@ if(song.played<minMatches){
 return false;
 }
 }
+return true;
+}
+
+function isFavComplete(){
+let active=state.songs.filter(s=>!s.skipped);
 let favoriteSongs=active.filter(s=>s.favorite);
 for(let song of favoriteSongs){
 if(song.played<5){
@@ -265,21 +279,8 @@ return false;
 if(!isTopComplete()){
 return false;
 }
-let sorted=[...active].sort((a,b)=>b.elo-a.elo);
-let top10=sorted.slice(0,10);
-for(let song of top10){
-if(song.played<8){
+if(!isFavComplete()){
 return false;
-}
-if(song.played<10){
-let index=sorted.indexOf(song);
-if(index>0&&!isCompared(song.id,sorted[index-1].id)){
-return false;
-}
-if(index<sorted.length-1&&!isCompared(song.id,sorted[index+1].id)){
-return false;
-}
-}
 }
 return true;
 }
@@ -287,10 +288,15 @@ return true;
 function getProgress(){
 let active=state.songs.filter(s=>!s.skipped);
 let needed=0;
+let allSongsDone=allSongsPlayed();
+if(!allSongsDone){
+needed=active.length*3;
+}else{
 for(let s of active){
 needed+=getMinComparisons(s);
 }
 needed=Math.ceil(needed/2);
+}
 let done=state.compared.length;
 let progress=Math.min(99,Math.round((done/needed)*100));
 return progress;
@@ -392,24 +398,45 @@ if(isComplete()){showComplete();return;}
 let sorted=[...active].sort((a,b)=>b.elo-a.elo);
 let top20=sorted.slice(0,20);
 let top10=top20.slice(0,10);
-let favoriteSongs=active.filter(s=>s.favorite&&s.played<5);
-if(favoriteSongs.length>0){
-favoriteSongs.sort((a,b)=>a.played-b.played);
-let favSong=favoriteSongs[0];
-let opponents=active.filter(s=>s.id!==favSong.id&&!isCompared(favSong.id,s.id));
-opponents.sort((a,b)=>{
-let aFav=a.favorite?0:1;
-let bFav=b.favorite?0:1;
-return (bFav-aFav)||(a.elo-b.elo);
-});
+
+if(!allSongsPlayed()){
+for(let s of active){
+if(s.played<3){
+let opponents=active.filter(x=>x.id!==s.id&&!isCompared(s.id,x.id));
 if(opponents.length>0){
-state.a=favSong;
+state.a=s;
+opponents.sort((a,b)=>a.played-b.played);
 state.b=opponents[0];
 save();
 render();
 return;
 }
 }
+}
+}
+
+for(let i=0;i<top10.length;i++){
+for(let j=i+1;j<top10.length;j++){
+if(!isCompared(top10[i].id,top10[j].id)){
+state.a=top10[i];
+state.b=top10[j];
+save();
+render();
+return;
+}
+}
+}
+
+for(let i=0;i<top20.length-1;i++){
+if(!isCompared(top20[i].id,top20[i+1].id)){
+state.a=top20[i];
+state.b=top20[i+1];
+save();
+render();
+return;
+}
+}
+
 let songsWithFav=active.filter(s=>s.favorite);
 let songsWithoutFav=active.filter(s=>!s.favorite);
 for(let noFav of songsWithoutFav){
@@ -423,26 +450,22 @@ return;
 }
 }
 }
-for(let i=0;i<top10.length;i++){
-for(let j=i+1;j<top10.length;j++){
-if(!isCompared(top10[i].id,top10[j].id)){
-state.a=top10[i];
-state.b=top10[j];
+
+let favoriteSongs=active.filter(s=>s.favorite&&s.played<5);
+if(favoriteSongs.length>0){
+favoriteSongs.sort((a,b)=>a.played-b.played);
+let favSong=favoriteSongs[0];
+let opponents=active.filter(s=>s.id!==favSong.id&&!isCompared(favSong.id,s.id));
+if(opponents.length>0){
+state.a=favSong;
+opponents.sort((a,b)=>a.played-b.played);
+state.b=opponents[0];
 save();
 render();
 return;
 }
 }
-}
-for(let i=0;i<top20.length-1;i++){
-if(!isCompared(top20[i].id,top20[i+1].id)){
-state.a=top20[i];
-state.b=top20[i+1];
-save();
-render();
-return;
-}
-}
+
 let minPlayed=Infinity;
 let candidates=[];
 for(let s of active){
@@ -460,6 +483,7 @@ save();
 render();
 return;
 }
+
 for(let i=0;i<active.length;i++){
 for(let j=i+1;j<active.length;j++){
 if(!isCompared(active[i].id,active[j].id)){
@@ -471,6 +495,7 @@ return;
 }
 }
 }
+
 state.a=active[Math.floor(Math.random()*active.length)];
 let opponents=active.filter(s=>s.id!==state.a.id);
 state.b=opponents[Math.floor(Math.random()*opponents.length)];
