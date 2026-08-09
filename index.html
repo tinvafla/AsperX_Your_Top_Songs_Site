@@ -108,7 +108,7 @@ body{margin:0;background:#1a1a1a;color:#e0e0e0;font-family:'Segoe UI',Arial,sans
 
 <script>
 
-const VERSION = "1.0.1";
+const VERSION = "1.0.3";
 
 const SONGS=[
     "Bad Trip", "Monsta", "Plague (feat. Ctrl+Freak)", "Sorry Not Sorry", "Stellar",
@@ -299,17 +299,6 @@ return false;
 return true;
 }
 
-function isBasicComplete(){
-let active=state.songs.filter(s=>!s.skipped);
-if(active.length<2)return true;
-for(let s of active){
-if(s.played<3){
-return false;
-}
-}
-return true;
-}
-
 function isComplete(){
 let active=state.songs.filter(s=>!s.skipped);
 if(active.length<2)return true;
@@ -339,15 +328,6 @@ return 100;
 let needed=active.length*3;
 let done=state.compared.length;
 let progress=Math.min(99,Math.round((done/needed)*100));
-if(isBasicComplete() && progress<50){
-progress=50;
-}
-if(isComplete()){
-progress=100;
-}
-if(progress>=100 && !isComplete()){
-progress=99;
-}
 if(progress>cachedProgress){
 cachedProgress=progress;
 }
@@ -725,6 +705,11 @@ let skipped=state.songs.filter(s=>s.skipped);
 list.forEach(s=>{ratings[s.title]=s.elo;});
 const fullComplete=isComplete();
 const progress=getProgress();
+
+if(!forced && !fullComplete){
+showToast('⚠️ Тест ещё не пройден! Продолжите сравнения.');
+return;
+}
 
 app.innerHTML=`
 <div class="logo" style="margin-bottom:8px;">
