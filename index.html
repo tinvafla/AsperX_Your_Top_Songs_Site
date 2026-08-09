@@ -216,8 +216,18 @@ return Math.round(k);
 function isTopComplete(){
 let active=state.songs.filter(s=>!s.skipped);
 let sorted=[...active].sort((a,b)=>b.elo-a.elo);
-let top20=sorted.slice(0,20);
+let top5=sorted.slice(0,5);
 let top10=sorted.slice(0,10);
+let top20=sorted.slice(0,20);
+
+for(let i=0;i<top5.length;i++){
+for(let j=i+1;j<top5.length;j++){
+if(!isCompared(top5[i].id,top5[j].id)){
+return false;
+}
+}
+}
+
 for(let i=0;i<top10.length;i++){
 for(let j=i+1;j<top10.length;j++){
 if(!isCompared(top10[i].id,top10[j].id)){
@@ -225,11 +235,13 @@ return false;
 }
 }
 }
+
 for(let song of top20){
 if(song.played<7){
 return false;
 }
 }
+
 for(let i=0;i<top20.length-1;i++){
 if(!isCompared(top20[i].id,top20[i+1].id)){
 if(Math.abs(top20[i].elo-top20[i+1].elo)<100){
@@ -237,12 +249,14 @@ return false;
 }
 }
 }
+
 for(let song of top10){
 let minMatches=song.elo>1150?10:8;
 if(song.played<minMatches){
 return false;
 }
 }
+
 return true;
 }
 
@@ -276,10 +290,10 @@ if(s.played<getMinComparisons(s)){
 return false;
 }
 }
-if(!isTopComplete()){
+if(!isFavComplete()){
 return false;
 }
-if(!isFavComplete()){
+if(!isTopComplete()){
 return false;
 }
 return true;
@@ -396,8 +410,9 @@ let active=state.songs.filter(s=>!s.skipped);
 if(active.length<2){showComplete();return;}
 if(isComplete()){showComplete();return;}
 let sorted=[...active].sort((a,b)=>b.elo-a.elo);
+let top5=sorted.slice(0,5);
+let top10=sorted.slice(0,10);
 let top20=sorted.slice(0,20);
-let top10=top20.slice(0,10);
 
 if(!allSongsPlayed()){
 for(let s of active){
@@ -415,25 +430,45 @@ return;
 }
 }
 
-for(let i=0;i<top10.length;i++){
-for(let j=i+1;j<top10.length;j++){
-if(!isCompared(top10[i].id,top10[j].id)){
-state.a=top10[i];
-state.b=top10[j];
+let minPlayed=Infinity;
+let candidates=[];
+for(let s of active){
+if(s.played<minPlayed){
+minPlayed=s.played;
+candidates=[s];
+}else if(s.played===minPlayed){
+candidates.push(s);
+}
+}
+if(candidates.length>=2){
+let pairFound=false;
+for(let i=0;i<candidates.length;i++){
+for(let j=i+1;j<candidates.length;j++){
+if(!isCompared(candidates[i].id,candidates[j].id)){
+state.a=candidates[i];
+state.b=candidates[j];
+pairFound=true;
+break;
+}
+}
+if(pairFound)break;
+}
+if(pairFound){
 save();
 render();
 return;
-}
 }
 }
 
-for(let i=0;i<top20.length-1;i++){
-if(!isCompared(top20[i].id,top20[i+1].id)){
-state.a=top20[i];
-state.b=top20[i+1];
+for(let i=0;i<active.length;i++){
+for(let j=i+1;j<active.length;j++){
+if(!isCompared(active[i].id,active[j].id)){
+state.a=active[i];
+state.b=active[j];
 save();
 render();
 return;
+}
 }
 }
 
@@ -451,44 +486,33 @@ return;
 }
 }
 
-let favoriteSongs=active.filter(s=>s.favorite&&s.played<5);
-if(favoriteSongs.length>0){
-favoriteSongs.sort((a,b)=>a.played-b.played);
-let favSong=favoriteSongs[0];
-let opponents=active.filter(s=>s.id!==favSong.id&&!isCompared(favSong.id,s.id));
-if(opponents.length>0){
-state.a=favSong;
-opponents.sort((a,b)=>a.played-b.played);
-state.b=opponents[0];
+for(let i=0;i<top20.length-1;i++){
+if(!isCompared(top20[i].id,top20[i+1].id)){
+state.a=top20[i];
+state.b=top20[i+1];
 save();
 render();
 return;
 }
 }
 
-let minPlayed=Infinity;
-let candidates=[];
-for(let s of active){
-if(s.played<minPlayed){
-minPlayed=s.played;
-candidates=[s];
-}else if(s.played===minPlayed){
-candidates.push(s);
-}
-}
-if(candidates.length>=2){
-state.a=candidates[0];
-state.b=candidates[1];
+for(let i=0;i<top10.length;i++){
+for(let j=i+1;j<top10.length;j++){
+if(!isCompared(top10[i].id,top10[j].id)){
+state.a=top10[i];
+state.b=top10[j];
 save();
 render();
 return;
 }
+}
+}
 
-for(let i=0;i<active.length;i++){
-for(let j=i+1;j<active.length;j++){
-if(!isCompared(active[i].id,active[j].id)){
-state.a=active[i];
-state.b=active[j];
+for(let i=0;i<top5.length;i++){
+for(let j=i+1;j<top5.length;j++){
+if(!isCompared(top5[i].id,top5[j].id)){
+state.a=top5[i];
+state.b=top5[j];
 save();
 render();
 return;
