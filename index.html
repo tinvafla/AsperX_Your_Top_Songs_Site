@@ -26,9 +26,6 @@ body{margin:0;background:#1a1a1a;color:#e0e0e0;font-family:'Segoe UI',Arial,sans
 .btn-continue{background:linear-gradient(135deg,#cc8800,#eebb00);color:#1a1a1a;font-size:16px;font-weight:700;letter-spacing:2px;padding:14px;border:none;border-radius:8px;width:100%;cursor:pointer;transition:all 0.3s ease;text-transform:uppercase;box-shadow:0 4px 25px rgba(204,136,0,0.3)}
 .btn-continue:hover{background:linear-gradient(135deg,#eebb00,#ffcc33);box-shadow:0 4px 35px rgba(204,136,0,0.5);transform:translateY(-2px)}
 
-.btn-rank{background:transparent;border:1px solid #444;color:#aaa;padding:14px;border-radius:8px;width:100%;cursor:pointer;font-size:15px;letter-spacing:2px;transition:all 0.3s ease;margin-top:10px}
-.btn-rank:hover{border-color:#8b0000;color:#8b0000;background:rgba(139,0,0,0.1)}
-
 .btn-rank-warning{background:transparent;border:1px solid #444;color:#aaa;padding:14px;border-radius:8px;width:100%;cursor:pointer;font-size:15px;letter-spacing:2px;transition:all 0.3s ease;margin-top:10px;display:flex;flex-direction:column;align-items:center;gap:4px}
 .btn-rank-warning:hover{border-color:#8b0000;color:#8b0000;background:rgba(139,0,0,0.1)}
 .btn-rank-warning .sub-text{font-size:11px;letter-spacing:1px;color:#666;font-weight:300}
@@ -135,7 +132,14 @@ const SONGS=[
     "Я буду любить тебя вечно", "Я рассыпаю сахар", "Ядовитые"
 ]
 
-let state={songs:[],a:null,b:null,history:[],compared:[]};
+let state={
+    songs:[],
+    a:null,
+    b:null,
+    history:[],
+    compared:[],
+    voteHistory:[]
+};
 let ratings = {};
 
 function save(){localStorage.setItem("asper_x",JSON.stringify(state));}
@@ -148,6 +152,7 @@ let parsed=JSON.parse(x);
 if(parsed.songs&&parsed.songs.length>0){
 parsed.songs=parsed.songs.map(s=>({...s,favorite:s.favorite||false,skipped:s.skipped||false,wins:s.wins||0,losses:s.losses||0,played:s.played||0,elo:s.elo||1000,preview:s.preview||""}));
 parsed.compared=parsed.compared||[];
+parsed.voteHistory=parsed.voteHistory||[];
 state=parsed;
 return true;
 }}catch(e){}
@@ -159,6 +164,7 @@ function init(){
 state.songs=SONGS.map((x,i)=>({id:i,title:x,preview:"",elo:1000,wins:0,losses:0,favorite:false,skipped:false,played:0}));
 state.history=[];
 state.compared=[];
+state.voteHistory=[];
 state.a=null;
 state.b=null;
 ratings = {};
@@ -176,14 +182,104 @@ state.compared.push({a:id1,b:id2,winner:winner});
 }
 
 function getMinComparisons(song){
-return song.wins>0?5:3;
+let base=3;
+if(song.favorite&&song.played<5)return 8;
+if(song.elo>1100)return 8;
+if(song.elo>1050)return 6;
+if(song.elo>950)return 5;
+return base;
+}
+
+function getK(song){
+let sorted=[...state.songs.filter(s=>!s.skipped)].sort((a,b)=>b.elo-a.elo);
+let position=sorted.findIndex(s=>s.id===song.id)+1;
+let k=32;
+if(position<=10){k=16;}
+else if(position<=20){k=24;}
+else if(position<=50){k=32;}
+else{k=40;}
+if(song.played>10){k=k*0.8;}
+if(song.played>20){k=k*0.7;}
+if(song.favorite&&position<=20){k=k*0.85;}
+return Math.round(k);
+}
+
+function isTopComplete(){
+let active=state.songs.filter(s=>!s.skipped);
+let sorted=[...active].sort((a,b)=>b.elo-a.elo);
+let top20=sorted.slice(0,20);
+let top10=sorted.slice(0,10);
+for(let i=0;i<top10.length;i++){
+for(let j=i+1;j<top10.length;j++){
+if(!isCompared(top10[i].id,top10[j].id)){
+return false;
+}
+}
+}
+for(let song of top20){
+if(song.played<7){
+return false;
+}
+}
+for(let i=0;i<top20.length-1;i++){
+if(!isCompared(top20[i].id,top20[i+1].id)){
+if(Math.abs(top20[i].elo-top20[i+1].elo)<100){
+return false;
+}
+}
+}
+for(let song of top10){
+let minMatches=song.elo>1150?10:8;
+if(song.played<minMatches){
+return false;
+}
+}
+let favoriteSongs=active.filter(s=>s.favorite);
+for(let song of favoriteSongs){
+if(song.played<5){
+return false;
+}
+}
+let songsWithFav=active.filter(s=>s.favorite);
+let songsWithoutFav=active.filter(s=>!s.favorite);
+for(let noFav of songsWithoutFav){
+for(let withFav of songsWithFav){
+if(noFav.elo>withFav.elo){
+if(!isCompared(noFav.id,withFav.id)){
+return false;
+}
+}
+}
+}
+return true;
 }
 
 function isComplete(){
 let active=state.songs.filter(s=>!s.skipped);
 if(active.length<2)return true;
 for(let s of active){
-if(s.played<getMinComparisons(s))return false;
+if(s.played<getMinComparisons(s)){
+return false;
+}
+}
+if(!isTopComplete()){
+return false;
+}
+let sorted=[...active].sort((a,b)=>b.elo-a.elo);
+let top10=sorted.slice(0,10);
+for(let song of top10){
+if(song.played<8){
+return false;
+}
+if(song.played<10){
+let index=sorted.indexOf(song);
+if(index>0&&!isCompared(song.id,sorted[index-1].id)){
+return false;
+}
+if(index<sorted.length-1&&!isCompared(song.id,sorted[index+1].id)){
+return false;
+}
+}
 }
 return true;
 }
@@ -198,6 +294,223 @@ needed=Math.ceil(needed/2);
 let done=state.compared.length;
 let progress=Math.min(99,Math.round((done/needed)*100));
 return progress;
+}
+
+function saveVoteState(){
+let snapshot={
+a:state.a?{...state.a}:null,
+b:state.b?{...state.b}:null,
+songs:state.songs.map(s=>({
+id:s.id,
+elo:s.elo,
+wins:s.wins,
+losses:s.losses,
+played:s.played,
+favorite:s.favorite,
+skipped:s.skipped
+})),
+lastCompared:state.compared.length>0?{...state.compared[state.compared.length-1]}:null
+};
+state.voteHistory.push(snapshot);
+if(state.voteHistory.length>10){
+state.voteHistory.shift();
+}
+save();
+}
+
+function showToast(message){
+let toast=document.createElement('div');
+toast.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 20px;border-radius:8px;font-size:14px;z-index:1000;opacity:0;transition:opacity 0.3s ease;max-width:90%;text-align:center;';
+toast.textContent=message;
+document.body.appendChild(toast);
+setTimeout(()=>{toast.style.opacity='1';},10);
+setTimeout(()=>{
+toast.style.opacity='0';
+setTimeout(()=>toast.remove(),300);
+},2000);
+}
+
+function undoVote(){
+if(state.voteHistory.length===0){
+showToast('❌ Нет действий для отмены');
+return;
+}
+let prev=state.voteHistory.pop();
+state.a=prev.a;
+state.b=prev.b;
+for(let savedSong of prev.songs){
+let currentSong=state.songs.find(s=>s.id===savedSong.id);
+if(currentSong){
+currentSong.elo=savedSong.elo;
+currentSong.wins=savedSong.wins;
+currentSong.losses=savedSong.losses;
+currentSong.played=savedSong.played;
+}
+}
+if(prev.lastCompared){
+state.compared.pop();
+}
+for(let song of state.songs){
+if(!song.skipped){
+ratings[song.title]=song.elo;
+}
+}
+save();
+showToast('↩️ Отменено последнее действие');
+render();
+}
+
+function elo(winner,loser){
+let kw=getK(winner);
+let kl=getK(loser);
+let ew=1/(1+Math.pow(10,(loser.elo-winner.elo)/400));
+let el=1/(1+Math.pow(10,(winner.elo-loser.elo)/400));
+let oldWinnerElo=winner.elo;
+let oldLoserElo=loser.elo;
+winner.elo=Math.round(winner.elo+kw*(1-ew));
+loser.elo=Math.round(loser.elo+kl*(0-el));
+let winnerDiff=winner.elo-oldWinnerElo;
+let loserDiff=loser.elo-oldLoserElo;
+if(Math.abs(winnerDiff)>50){
+winner.elo=oldWinnerElo+(winnerDiff>0?50:-50);
+}
+if(Math.abs(loserDiff)>50){
+loser.elo=oldLoserElo+(loserDiff>0?50:-50);
+}
+let eloDiff=Math.abs(winner.elo-loser.elo);
+if(eloDiff<50&&winner.played>5&&loser.played>5){
+let reduction=0.5+(eloDiff/100);
+winner.elo=Math.round(oldWinnerElo+(winner.elo-oldWinnerElo)*reduction);
+loser.elo=Math.round(oldLoserElo+(loser.elo-oldLoserElo)*reduction);
+}
+}
+
+function pair(){
+let active=state.songs.filter(s=>!s.skipped);
+if(active.length<2){showComplete();return;}
+if(isComplete()){showComplete();return;}
+let sorted=[...active].sort((a,b)=>b.elo-a.elo);
+let top20=sorted.slice(0,20);
+let top10=top20.slice(0,10);
+let favoriteSongs=active.filter(s=>s.favorite&&s.played<5);
+if(favoriteSongs.length>0){
+favoriteSongs.sort((a,b)=>a.played-b.played);
+let favSong=favoriteSongs[0];
+let opponents=active.filter(s=>s.id!==favSong.id&&!isCompared(favSong.id,s.id));
+opponents.sort((a,b)=>{
+let aFav=a.favorite?0:1;
+let bFav=b.favorite?0:1;
+return (bFav-aFav)||(a.elo-b.elo);
+});
+if(opponents.length>0){
+state.a=favSong;
+state.b=opponents[0];
+save();
+render();
+return;
+}
+}
+let songsWithFav=active.filter(s=>s.favorite);
+let songsWithoutFav=active.filter(s=>!s.favorite);
+for(let noFav of songsWithoutFav){
+for(let withFav of songsWithFav){
+if(noFav.elo>withFav.elo&&!isCompared(noFav.id,withFav.id)){
+state.a=noFav;
+state.b=withFav;
+save();
+render();
+return;
+}
+}
+}
+for(let i=0;i<top10.length;i++){
+for(let j=i+1;j<top10.length;j++){
+if(!isCompared(top10[i].id,top10[j].id)){
+state.a=top10[i];
+state.b=top10[j];
+save();
+render();
+return;
+}
+}
+}
+for(let i=0;i<top20.length-1;i++){
+if(!isCompared(top20[i].id,top20[i+1].id)){
+state.a=top20[i];
+state.b=top20[i+1];
+save();
+render();
+return;
+}
+}
+let minPlayed=Infinity;
+let candidates=[];
+for(let s of active){
+if(s.played<minPlayed){
+minPlayed=s.played;
+candidates=[s];
+}else if(s.played===minPlayed){
+candidates.push(s);
+}
+}
+if(candidates.length>=2){
+state.a=candidates[0];
+state.b=candidates[1];
+save();
+render();
+return;
+}
+for(let i=0;i<active.length;i++){
+for(let j=i+1;j<active.length;j++){
+if(!isCompared(active[i].id,active[j].id)){
+state.a=active[i];
+state.b=active[j];
+save();
+render();
+return;
+}
+}
+}
+state.a=active[Math.floor(Math.random()*active.length)];
+let opponents=active.filter(s=>s.id!==state.a.id);
+state.b=opponents[Math.floor(Math.random()*opponents.length)];
+save();
+render();
+}
+
+function vote(x){
+saveVoteState();
+let w=x==="a"?state.a:state.b;
+let l=x==="a"?state.b:state.a;
+elo(w,l);
+w.wins++;
+l.losses++;
+w.played++;
+l.played++;
+addCompared(state.a.id,state.b.id,w.id);
+state.history.push({a:state.a.id,b:state.b.id,winner:w.id,time:Date.now()});
+ratings[w.title]=w.elo;
+ratings[l.title]=l.elo;
+save();
+if(isComplete()){showComplete();}else{pair();}
+}
+
+function fav(x){
+let s=x==="a"?state.a:state.b;
+s.favorite=!s.favorite;
+save();
+render();
+}
+
+function skip(x){
+let s=x==="a"?state.a:state.b;
+if(s.favorite)return;
+s.skipped=true;
+state.compared=state.compared.filter(p=>p.a!==s.id&&p.b!==s.id);
+if(state.a&&state.a.id===s.id)state.a=null;
+if(state.b&&state.b.id===s.id)state.b=null;
+save();
+if(isComplete()){showComplete();}else{pair();}
 }
 
 function home(){
@@ -268,80 +581,26 @@ app.innerHTML=`
 `;
 }
 
-function pair(){
-let active=state.songs.filter(s=>!s.skipped);
-if(active.length<2){showComplete();return;}
-if(isComplete()){showComplete();return;}
-
-let zeros = active.filter(s => s.wins === 0);
-if (zeros.length > 1) {
-    zeros.sort((a, b) => a.played - b.played);
-    state.a = zeros[0];
-    let opponents = active.filter(s => s.id !== state.a.id);
-    opponents.sort((a, b) => {
-        let aZ = a.wins === 0 ? 0 : 1;
-        let bZ = b.wins === 0 ? 0 : 1;
-        return aZ - bZ;
-    });
-    state.b = opponents[0];
-    save();
-    render();
-    return;
-}
-
-active.sort((a,b)=>a.played-b.played);
-
-let found=false;
-for(let i=0;i<active.length&&!found;i++){
-let a=active[i];
-let opponents=active.filter(s=>s.id!==a.id&&!isCompared(a.id,s.id));
-if(opponents.length>0){
-state.a=a;
-opponents.sort((x,y)=>x.played-y.played);
-state.b=opponents[0];
-found=true;
-}
-}
-
-if(!found){
-active.sort((a,b)=>a.played-b.played);
-state.a=active[0];
-let opponents=active.filter(s=>s.id!==state.a.id);
-opponents.sort((a,b)=>a.played-b.played);
-state.b=opponents[0];
-}
-
-if(state.a&&state.b&&state.a.id===state.b.id){
-showComplete();
-return;
-}
-
-save();
-render();
-}
-
 function render(){
 if(!state.a||!state.b){home();return;}
-
 let progress=getProgress();
-
 let favA=state.a.favorite?'active':'';
 let favB=state.b.favorite?'active':'';
 let skipA=state.a.favorite?'disabled':'';
 let skipB=state.b.favorite?'disabled':'';
-
+let canUndo=state.voteHistory.length>0;
 function getTitleClass(title){
-if(title.length > 30) return 'xsmall';
-if(title.length > 20) return 'small';
+if(title.length>30)return 'xsmall';
+if(title.length>20)return 'small';
 return '';
 }
-
-app.innerHTML=`
+let html=`
 <div class="logo" style="margin-bottom:8px;">
-<div class="main" style="font-size:22px;letter-spacing:2px;"><span class="big-letter" style="font-size:28px;">A</span>SPER <span class="big-letter" style="font-size:28px;">X</span></div>
+<div class="main" style="font-size:22px;letter-spacing:2px;">
+<span class="big-letter" style="font-size:28px;">A</span>SPER <span class="big-letter" style="font-size:28px;">X</span>
+</div>
 <div class="sub" style="font-size:13px;letter-spacing:3px;">YOUR TOP SONGS</div>
 </div>
-
 <div class="progress-container show">
 <div class="progress-top">
 <span class="label">Оценка</span>
@@ -351,7 +610,6 @@ app.innerHTML=`
 <div class="progress-fill" style="width:${progress}%"></div>
 </div>
 </div>
-
 <div class="song-card">
 <div class="title ${getTitleClass(state.a.title)}">${state.a.title}</div>
 <div class="btn-group">
@@ -360,9 +618,7 @@ app.innerHTML=`
 <button class="skip-btn ${skipA}" onclick="skip('a')">⏭</button>
 </div>
 </div>
-
 <h2 style="text-align:center;font-size:15px;font-weight:300;color:#666;margin:4px 0;letter-spacing:2px;">— ИЛИ —</h2>
-
 <div class="song-card">
 <div class="title ${getTitleClass(state.b.title)}">${state.b.title}</div>
 <div class="btn-group">
@@ -371,90 +627,43 @@ app.innerHTML=`
 <button class="skip-btn ${skipB}" onclick="skip('b')">⏭</button>
 </div>
 </div>
-
+<div style="width:100%;display:flex;justify-content:center;margin:4px 0;">
+<button onclick="undoVote()" style="background:transparent;border:1px solid ${canUndo?'#555':'#333'};color:${canUndo?'#888':'#444'};padding:6px 16px;border-radius:6px;font-size:12px;cursor:${canUndo?'pointer':'default'};transition:all 0.3s ease;opacity:${canUndo?'1':'0.4'};letter-spacing:1px;display:flex;align-items:center;gap:5px;" ${!canUndo?'disabled':''} onmouseover="this.style.borderColor='${canUndo?'#8b0000':'#333'}';this.style.color='${canUndo?'#8b0000':'#444'}'" onmouseout="this.style.borderColor='${canUndo?'#555':'#333'}';this.style.color='${canUndo?'#888':'#444'}'">
+<span style="font-size:14px;">↩️</span> Назад ${canUndo?'('+state.voteHistory.length+')':''}
+</button>
+</div>
 <button class="btn-rank-warning" onclick="ranking()">
 <span>🏆 Рейтинг</span>
 <span class="sub-text">⚠️ Досрочное завершение может привести к неточности результатов. Пожалуйста, не учитывайте такие результаты в общем рейтинге.</span>
 </button>
 `;
-}
-
-function expected(a,b){return 1/(1+Math.pow(10,(b.elo-a.elo)/400));}
-
-function elo(w,l){
-let k=32;
-let ew=expected(w,l);
-let el=expected(l,w);
-w.elo=Math.round(w.elo+k*(1-ew));
-l.elo=Math.round(l.elo+k*(0-el));
-}
-
-function vote(x){
-let w=x==="a"?state.a:state.b;
-let l=x==="a"?state.b:state.a;
-
-elo(w,l);
-w.wins++;
-l.losses++;
-w.played++;
-l.played++;
-
-addCompared(state.a.id,state.b.id,w.id);
-state.history.push({a:state.a.id,b:state.b.id,winner:w.id,time:Date.now()});
-
-ratings[w.title] = w.elo;
-ratings[l.title] = l.elo;
-
-save();
-if(isComplete()){showComplete();}else{pair();}
-}
-
-function fav(x){
-let s=x==="a"?state.a:state.b;
-s.favorite=!s.favorite;
-save();
-render();
-}
-
-function skip(x){
-let s=x==="a"?state.a:state.b;
-if(s.favorite)return;
-s.skipped=true;
-state.compared=state.compared.filter(p=>p.a!==s.id&&p.b!==s.id);
-if(state.a&&state.a.id===s.id)state.a=null;
-if(state.b&&state.b.id===s.id)state.b=null;
-save();
-if(isComplete()){showComplete();}else{pair();}
+app.innerHTML=html;
 }
 
 function ranking(){
 let list=[...state.songs].filter(s=>!s.skipped).sort((a,b)=>b.elo-a.elo);
 let skipped=state.songs.filter(s=>s.skipped);
-
-list.forEach(s => { ratings[s.title] = s.elo; });
-
-const fullComplete = isComplete();
-
+list.forEach(s=>{ratings[s.title]=s.elo;});
+const fullComplete=isComplete();
 app.innerHTML=`
 <div class="logo" style="margin-bottom:8px;">
 <div class="main" style="font-size:22px;letter-spacing:2px;"><span class="big-letter" style="font-size:28px;">A</span>SPER <span class="big-letter" style="font-size:28px;">X</span></div>
 <div class="sub" style="font-size:13px;letter-spacing:3px;">YOUR TOP SONGS</div>
 </div>
-
-${!fullComplete ? `
+${!fullComplete?`
 <div class="warning-box">
 <div class="title">⚠️ ВНИМАНИЕ!</div>
 <div class="text">Вы завершили тест ДОСРОЧНО!<br>Результат НЕДОСТОВЕРНЫЙ — не все песни были оценены.</div>
 <div class="subtext"><strong>Рекомендуется пройти тест до конца.</strong></div>
 <button class="btn-continue" onclick="continueTest()">↻ ПРОДОЛЖИТЬ ТЕСТ</button>
 </div>
-` : `
+`:
+`
 <div class="success-box">
 <div class="title">✅ Тест пройден полностью!</div>
 <div class="text">Результаты достоверны и будут учтены в общем рейтинге.</div>
 </div>
 `}
-
 <div style="margin:8px 0;text-align:center;color:#aaa;font-size:13px;">Твой персональный рейтинг</div>
 <div class="ranking-list">
 ${list.map((x,i)=>`
@@ -475,21 +684,19 @@ ${skipped.map(x=>`
 `).join('')}
 </div>
 `:''}
-
 <button class="btn-start" onclick="home()" style="margin-top:20px;">← На главную</button>
 <button class="btn-secondary" onclick="resetAll()">🔄 Начать заново</button>
-
-${fullComplete ? `
-<a href="tg://resolve?domain=AsperX_Your_Top_Songs_bot" class="btn-start" style="display:block; text-align:center; text-decoration:none; width:100%; margin-top:10px;" onclick="sendResultsAndExit(event)">
-    🔙 Вернуться в бота и сохранить топ
+${fullComplete?`
+<a href="tg://resolve?domain=AsperX_Your_Top_Songs_bot" class="btn-start" style="display:block;text-align:center;text-decoration:none;width:100%;margin-top:10px;" onclick="sendResultsAndExit(event)">
+🔙 Вернуться в бота и сохранить топ
 </a>
-` : `
+`:
+`
 <div style="margin-top:10px;opacity:0.5;cursor:not-allowed;background:#333;padding:18px;border-radius:8px;text-align:center;color:#888;width:100%;font-size:16px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">
-    ⛔ Вернуться в бота (тест не пройден)
+⛔ Вернуться в бота (тест не пройден)
 </div>
 <div style="color:#666;font-size:12px;text-align:center;margin-top:5px;">Пройдите тест полностью, чтобы сохранить результаты</div>
 `}
-
 <div class="footer" style="margin-top:30px;">
 <div>Сделано с <span class="heart">❤️</span> для Asper X и фандома</div>
 <div class="author">
@@ -499,51 +706,19 @@ ${fullComplete ? `
 `;
 }
 
-function continueTest() {
-    if(state.a && state.b) {
-        render();
-    } else {
-        start();
-    }
-}
+function continueTest(){if(state.a&&state.b){render();}else{start();}}
 
-function resetAll(){
-if(confirm('Удалить все данные и начать заново?')){
-init();
-home();
-}
-}
+function resetAll(){if(confirm('Удалить все данные и начать заново?')){init();home();}}
 
-function sendResultsAndExit(event) {
-    event.preventDefault();
-    
-    if (!isComplete()) {
-        alert('⚠️ Тест не пройден полностью! Результаты не будут сохранены.\nПройдите тест до конца.');
-        return;
-    }
-    
-    const sorted = Object.entries(ratings).sort((a,b) => b[1] - a[1]);
-    const urlParams = new URLSearchParams(window.location.search);
-    const userId = urlParams.get('user_id') || 'telegram_user_id';
-    
-    fetch('https://asperx-your-top-songs-bot.onrender.com/save_results', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            user_id: userId,
-            top_90: sorted,
-            is_complete: true
-        })
-    })
-    .then(() => {
-        window.location.href = 'tg://resolve?domain=AsperX_Your_Top_Songs_bot';
-    })
-    .catch(() => {
-        window.location.href = 'tg://resolve?domain=AsperX_Your_Top_Songs_bot';
-    });
-}
+function sendResultsAndExit(event){event.preventDefault();if(!isComplete()){alert('⚠️ Тест не пройден полностью! Результаты не будут сохранены.\nПройдите тест до конца.');return;}
+const sorted=Object.entries(ratings).sort((a,b)=>b[1]-a[1]);
+const urlParams=new URLSearchParams(window.location.search);
+const userId=urlParams.get('user_id')||'telegram_user_id';
+fetch('https://asperx-your-top-songs-bot.onrender.com/save_results',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId,top_90:sorted,is_complete:true})}).then(()=>{window.location.href='tg://resolve?domain=AsperX_Your_Top_Songs_bot';}).catch(()=>{window.location.href='tg://resolve?domain=AsperX_Your_Top_Songs_bot';});}
 
-init();
+document.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undoVote();}});
+
+if(!load()){init();}
 home();
 
 </script>
