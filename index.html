@@ -714,7 +714,7 @@ let html=`
 </div>
 <div style="width:100%;display:flex;justify-content:center;margin:4px 0;">
 <button onclick="undoVote()" style="background:transparent;border:1px solid ${canUndo?'#555':'#333'};color:${canUndo?'#888':'#444'};padding:6px 16px;border-radius:6px;font-size:12px;cursor:${canUndo?'pointer':'default'};transition:all 0.3s ease;opacity:${canUndo?'1':'0.4'};letter-spacing:1px;display:flex;align-items:center;gap:5px;" ${!canUndo?'disabled':''} onmouseover="this.style.borderColor='${canUndo?'#8b0000':'#333'}';this.style.color='${canUndo?'#8b0000':'#444'}'" onmouseout="this.style.borderColor='${canUndo?'#555':'#333'}';this.style.color='${canUndo?'#888':'#444'}'">
-<span style="font-size:14px;">↩️</span> Назад ${canUndo?'('+state.voteHistory.length+')':''}
+<span style="font-size:14px;">↩️</span> Назад
 </button>
 </div>
 <button class="btn-rank-warning" onclick="ranking()">
