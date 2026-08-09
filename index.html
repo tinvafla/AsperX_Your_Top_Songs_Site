@@ -183,10 +183,9 @@ state.compared.push({a:id1,b:id2,winner:winner});
 
 function allSongsHaveWin(){
 let active=state.songs.filter(s=>!s.skipped);
-for(let s of active){
-if(s.wins===0){
+let zeroWins=active.filter(s=>s.wins===0);
+if(zeroWins.length>1){
 return false;
-}
 }
 return true;
 }
@@ -295,10 +294,8 @@ return true;
 function isComplete(){
 let active=state.songs.filter(s=>!s.skipped);
 if(active.length<2)return true;
-for(let s of active){
-if(s.wins===0){
+if(!allSongsHaveWin()){
 return false;
-}
 }
 for(let s of active){
 if(s.played<getMinComparisons(s)){
@@ -429,23 +426,18 @@ let top5=sorted.slice(0,5);
 let top10=sorted.slice(0,10);
 let top20=sorted.slice(0,20);
 
-if(!allSongsHaveWin()){
-let zeros=active.filter(s=>s.wins===0);
-if(zeros.length>=2){
-state.a=zeros[0];
-state.b=zeros[1];
+let zeroWins=active.filter(s=>s.wins===0);
+if(zeroWins.length>1){
+for(let i=0;i<zeroWins.length;i++){
+for(let j=i+1;j<zeroWins.length;j++){
+if(!isCompared(zeroWins[i].id,zeroWins[j].id)){
+state.a=zeroWins[i];
+state.b=zeroWins[j];
 save();
 render();
 return;
-} else if(zeros.length===1){
-let zero=zeros[0];
-let opponents=active.filter(s=>s.id!==zero.id);
-opponents.sort((a,b)=>a.elo-b.elo);
-state.a=zero;
-state.b=opponents[0];
-save();
-render();
-return;
+}
+}
 }
 }
 
@@ -453,14 +445,16 @@ if(!allSongsPlayed()){
 let shuffled=[...active].sort(()=>Math.random()-0.5);
 for(let s of shuffled){
 if(s.played<3){
-let opponents=active.filter(x=>x.id!==s.id&&!isCompared(s.id,x.id));
-if(opponents.length>0){
+let opponents=active.filter(x=>x.id!==s.id);
+let shuffledOpps=[...opponents].sort(()=>Math.random()-0.5);
+for(let opp of shuffledOpps){
+if(!isCompared(s.id,opp.id)){
 state.a=s;
-opponents.sort(()=>Math.random()-0.5);
-state.b=opponents[0];
+state.b=opp;
 save();
 render();
 return;
+}
 }
 }
 }
@@ -477,22 +471,16 @@ candidates.push(s);
 }
 }
 if(candidates.length>=2){
-let pairFound=false;
 for(let i=0;i<candidates.length;i++){
 for(let j=i+1;j<candidates.length;j++){
 if(!isCompared(candidates[i].id,candidates[j].id)){
 state.a=candidates[i];
 state.b=candidates[j];
-pairFound=true;
-break;
-}
-}
-if(pairFound)break;
-}
-if(pairFound){
 save();
 render();
 return;
+}
+}
 }
 }
 
@@ -544,23 +532,7 @@ return;
 }
 }
 
-for(let i=0;i<active.length;i++){
-for(let j=i+1;j<active.length;j++){
-if(!isCompared(active[i].id,active[j].id)){
-state.a=active[i];
-state.b=active[j];
-save();
-render();
-return;
-}
-}
-}
-
-state.a=active[Math.floor(Math.random()*active.length)];
-let opponents=active.filter(s=>s.id!==state.a.id);
-state.b=opponents[Math.floor(Math.random()*opponents.length)];
-save();
-render();
+showComplete();
 }
 
 function vote(x){
