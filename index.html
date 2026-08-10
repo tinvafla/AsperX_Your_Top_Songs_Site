@@ -72,6 +72,14 @@ body{margin:0;background:#1a1a1a;color:#e0e0e0;font-family:'Segoe UI',Arial,sans
 .skip-btn:hover{border-color:#8b0000;color:#8b0000;background:rgba(139,0,0,0.08)}
 .skip-btn.disabled{opacity:0.3;cursor:not-allowed;pointer-events:none}
 
+.video-btn{background:transparent;border:1px solid #444;color:#888;font-size:18px;padding:0 8px;border-radius:8px;cursor:pointer;transition:all 0.3s ease;display:flex;align-items:center;gap:4px}
+.video-btn:hover{border-color:#00aaff;color:#00aaff;transform:scale(1.05)}
+.video-btn.active{color:#00aaff;border-color:#00aaff;background:rgba(0,170,255,0.1)}
+
+.video-container{display:none;width:100%;margin:5px 0 10px 0;border-radius:8px;overflow:hidden;background:#000}
+.video-container.show{display:block}
+.video-container iframe{width:100%;height:180px;border:none}
+
 .ranking-list{width:100%}
 .rank-item{padding:5px 0;display:flex;align-items:center;gap:8px}
 .rank-item .pos{color:#666;font-weight:300;min-width:30px;font-size:15px}
@@ -97,7 +105,7 @@ body{margin:0;background:#1a1a1a;color:#e0e0e0;font-family:'Segoe UI',Arial,sans
 50%{transform:scale(1.08)}
 }
 
-@media(max-width:480px){#app{padding:10px}.logo .main{font-size:32px}.logo .main .big-letter{font-size:40px}.logo .sub{font-size:14px;letter-spacing:4px}.song-card .title{font-size:17px;height:50px}.song-card .title.small{font-size:14px}.song-card .title.xsmall{font-size:12px}.btn-group button{height:38px;font-size:13px}.fav-btn,.skip-btn{font-size:16px}.info-item{padding:10px 12px}.info-item .text .main{font-size:13px}.footer .author{flex-wrap:wrap}.footer .version{font-size:10px}}
+@media(max-width:480px){#app{padding:10px}.logo .main{font-size:32px}.logo .main .big-letter{font-size:40px}.logo .sub{font-size:14px;letter-spacing:4px}.song-card .title{font-size:17px;height:50px}.song-card .title.small{font-size:14px}.song-card .title.xsmall{font-size:12px}.btn-group button{height:38px;font-size:13px}.fav-btn,.skip-btn,.video-btn{font-size:16px}.info-item{padding:10px 12px}.info-item .text .main{font-size:13px}.footer .author{flex-wrap:wrap}.footer .version{font-size:10px}.video-container iframe{height:120px}}
 </style>
 
 </head>
@@ -108,37 +116,109 @@ body{margin:0;background:#1a1a1a;color:#e0e0e0;font-family:'Segoe UI',Arial,sans
 
 <script>
 
-const VERSION = "1.0.10";
+const VERSION = "1.1.0";
 
-const SONGS=[
-    "Bad Trip", "Monsta", "Plague (feat. Ctrl+Freak)", "Sorry Not Sorry", "Stellar",
-    "Über Ich", "Будет больно", "Был таким всегда (feat. aikko)", "В долгий путь",
-    "Вместе", "Ветер перемен", "Всё разбито (feat. KASKAD, Совергон, VULPES VULT!, ПАНЦУШОТ, Танцы Сознания)",
-    "Всё, что должно умереть", "Выстрели", "Волчок", "Делать", "Дело нескольких минут",
-    "Демоны города Икс", "Держись", "Дрянь", "Дыхание", "Дышать и жить", "Заряжай",
-    "Засыпай", "Земля", "Звёздная", "Змея", "Имя", "Ищи", "Если зовут",
-    "Каждый справляется сам", "Каприз", "Карантинка", "Картонная", "Квадрат Декарта",
-    "Классики (feat. tamagotchik)", "Колыбельная", "Космос", "Крики планет",
-    "Курит и молчит (feat. Ar4ey)", "Лабиринт (feat. ЛИСН)", "Линии жизни",
-    "Локус генома", "Любить", "Любовь и ненависть на улице Ленина", "Мой бог",
-    "Море", "Мотыльки (feat. Port Avenue)", "Мы не железные",
-    "На той стороне города (feat. Поколение Z)",
-    "Надо улыбаться",
-    "Не выходи", "Не переживай", "Не люблю", "Незнакомка", "Никому не говори",
-    "От автора", "Патрон", "Пей, лечись, люби (feat. Гарри Топор)", "Перелом",
-    "Петь в тишине", "Питер Пэйн", "План", "Почти получилось", "Праздничная",
-    "Право успеть", "Прикосноверие", "Приходи ко мне (feat. МОНТГОМЕРИ)",
-    "Привидения", "Приметы (feat. ГОТЭМ)", "Прозерпина", "Просто поговорить",
-    "Прости (feat. VULPES VULT!)", "ПТСР (feat. Ctrl+Freak)",
-    "Пускай весь мир разлетается по кускам", "Пустота (feat. Ctrl+Freak)",
-    "Радость", "Самая честная песня", "Сгораю", "Сказка (feat. Катя Лу)",
-    "Скоро узнаешь", "Слёзы сквозь смех", "Смерть луны",
-    "Сумасшедшим вход бесплатно", "Ты будешь гореть в аду", "Удачи, мистер Горски",
-    "Универсальный солдат", "Улетай", "Шаг назад (feat. UNVRS)",
-    "Шизофрения (feat. Серафим)", "Шрам", "Чтобы не забыть (feat. МОЛОДОСТЬ ВНУТРИ)",
-    "Эдем", "Эпитафия (feat. DEEP-EX-SENSE, Лжедмитрий IV)",
-    "Я буду любить тебя вечно", "Я рассыпаю сахар", "Ядовитые"
-]
+const SONGS_WITH_VIDEO = {
+    "Bad Trip": "https://www.youtube.com/embed/kB6ygfLrprI",
+    "Monsta": "https://www.youtube.com/embed/26HOVykO3QA",
+    "Plague (feat. Ctrl+Freak)": "https://www.youtube.com/embed/D4PspG5hUqY",
+    "Sorry Not Sorry": "https://www.youtube.com/embed/W4ZvO4K4S7k",
+    "Stellar": "https://www.youtube.com/embed/GHqoLSp3tME",
+    "Über Ich": "https://www.youtube.com/embed/B2qN4M3s5Uo",
+    "Будет больно": "https://www.youtube.com/embed/E4yJkF5uVco",
+    "Был таким всегда (feat. aikko)": "https://www.youtube.com/embed/Ku3vV6c7HOA",
+    "В долгий путь": "https://www.youtube.com/embed/feGJkXbK20o",
+    "Вместе": "https://www.youtube.com/embed/pKpMj4nVuKA",
+    "Ветер перемен": "https://www.youtube.com/embed/AuyGqV6ZBp4",
+    "Всё разбито": "https://www.youtube.com/embed/HMqF2qUj9SA",
+    "Всё, что должно умереть": "https://www.youtube.com/embed/nFgP9ZqhLBQ",
+    "Выстрели": "https://www.youtube.com/embed/R4AgvF3Knks",
+    "Волчок": "https://www.youtube.com/embed/JqVWjB3GpiA",
+    "Делать": "https://www.youtube.com/embed/atT7sPxkTpQ",
+    "Дело нескольких минут": "https://www.youtube.com/embed/7vXD4ZwQ2Ww",
+    "Демоны города Икс": "https://www.youtube.com/embed/fMDvHdHJFHA",
+    "Держись": "https://www.youtube.com/embed/y8JvzFqKXFI",
+    "Дрянь": "https://www.youtube.com/embed/PmMZ6Kq2Sx8",
+    "Дыхание": "https://www.youtube.com/embed/tfDs8L2Y3kM",
+    "Дышать и жить": "https://www.youtube.com/embed/xUoLhHhJigk",
+    "Заряжай": "https://www.youtube.com/embed/L8JtqWZvxII",
+    "Засыпай": "https://www.youtube.com/embed/jtY3H2Nxv2Q",
+    "Земля": "https://www.youtube.com/embed/HFxPXsPCLSs",
+    "Звёздная": "https://www.youtube.com/embed/3nZqNXHSddY",
+    "Змея": "https://www.youtube.com/embed/QKhxFcy3yPs",
+    "Имя": "https://www.youtube.com/embed/eMPYNaWxGC0",
+    "Ищи": "https://www.youtube.com/embed/npJjTfN7_BM",
+    "Если зовут": "https://www.youtube.com/embed/bnNysI-NRGo",
+    "Каждый справляется сам": "https://www.youtube.com/embed/NN9L5k-5X00",
+    "Каприз": "https://www.youtube.com/embed/FvxwPqM5sCM",
+    "Карантинка": "https://www.youtube.com/embed/yLLOYx2k7JI",
+    "Картонная": "https://www.youtube.com/embed/GHtMfJ1I_8E",
+    "Квадрат Декарта": "https://www.youtube.com/embed/Bnw5k8J9nJs",
+    "Классики (feat. tamagotchik)": "https://www.youtube.com/embed/eZ3p9mH6Y48",
+    "Колыбельная": "https://www.youtube.com/embed/ZPk9aP7P7xU",
+    "Космос": "https://www.youtube.com/embed/VfM2cDjI9SM",
+    "Крики планет": "https://www.youtube.com/embed/bNnqphUJRr4",
+    "Курит и молчит (feat. Ar4ey)": "https://www.youtube.com/embed/3xY4FwM6r0I",
+    "Лабиринт (feat. ЛИСН)": "https://www.youtube.com/embed/BDXlEhUvjFo",
+    "Линии жизни": "https://www.youtube.com/embed/G1eKt2qy3As",
+    "Локус генома": "https://www.youtube.com/embed/e5TcW_Z4XiI",
+    "Любить": "https://www.youtube.com/embed/YyAfv0rQR1w",
+    "Любовь и ненависть на улице Ленина": "https://www.youtube.com/embed/aB4k3FwJhLM",
+    "Мой бог": "https://www.youtube.com/embed/tZPj8Q2eD4U",
+    "Море": "https://www.youtube.com/embed/k3JwKtRcV0Q",
+    "Мотыльки (feat. Port Avenue)": "https://www.youtube.com/embed/F0RgH7aG1vA",
+    "Мы не железные": "https://www.youtube.com/embed/8Vd2k8C5I_U",
+    "На той стороне города (feat. Поколение Z)": "https://www.youtube.com/embed/0WxS7HwK7Q0",
+    "Надо улыбаться": "https://www.youtube.com/embed/ux0v4NHSHVw",
+    "Не выходи": "https://www.youtube.com/embed/hwXhD3Uf6Lg",
+    "Не переживай": "https://www.youtube.com/embed/fXb-tJpZQOY",
+    "Не люблю": "https://www.youtube.com/embed/Lm8OgH3Tj4w",
+    "Незнакомка": "https://www.youtube.com/embed/JtTz8VH-J6E",
+    "Никому не говори": "https://www.youtube.com/embed/8HJtD3YBW3w",
+    "От автора": "https://www.youtube.com/embed/0LjUcEtr7FI",
+    "Патрон": "https://www.youtube.com/embed/JkNv2L-MnBo",
+    "Пей, лечись, люби (feat. Гарри Топор)": "https://www.youtube.com/embed/aH4KpB5WVgw",
+    "Перелом": "https://www.youtube.com/embed/5FkE9VgLpV4",
+    "Петь в тишине": "https://www.youtube.com/embed/B4u5Hf8y_kM",
+    "Питер Пэйн": "https://www.youtube.com/embed/uIxG6UfL1TQ",
+    "План": "https://www.youtube.com/embed/ncXfHm2C3PA",
+    "Почти получилось": "https://www.youtube.com/embed/1aHxZ_1WLjE",
+    "Праздничная": "https://www.youtube.com/embed/PI0A6KVeZIE",
+    "Право успеть": "https://www.youtube.com/embed/3KxVW5hM3pU",
+    "Прикосноверие": "https://www.youtube.com/embed/HwG9PJk7Yn8",
+    "Приходи ко мне (feat. МОНТГОМЕРИ)": "https://www.youtube.com/embed/HIthh7bVfLk",
+    "Привидения": "https://www.youtube.com/embed/GLLUwJXgFlU",
+    "Приметы (feat. ГОТЭМ)": "https://www.youtube.com/embed/yBpJsNOj9Zo",
+    "Прозерпина": "https://www.youtube.com/embed/bR5YrKk_XSk",
+    "Просто поговорить": "https://www.youtube.com/embed/7gmp3Lh-yQE",
+    "Прости (feat. VULPES VULT!)": "https://www.youtube.com/embed/HMabQnfFrRM",
+    "ПТСР (feat. Ctrl+Freak)": "https://www.youtube.com/embed/F8DOqIeEIQE",
+    "Пускай весь мир разлетается по кускам": "https://www.youtube.com/embed/2T8PkXjM8hM",
+    "Пустота (feat. Ctrl+Freak)": "https://www.youtube.com/embed/HYvT4M1Tr3k",
+    "Радость": "https://www.youtube.com/embed/hDl2JlhMQaY",
+    "Самая честная песня": "https://www.youtube.com/embed/dI1fYdKFoYo",
+    "Сгораю": "https://www.youtube.com/embed/F8g9MryWMD0",
+    "Сказка (feat. Катя Лу)": "https://www.youtube.com/embed/lHnl6WjC3dU",
+    "Скоро узнаешь": "https://www.youtube.com/embed/xu5K6S4IEFs",
+    "Слёзы сквозь смех": "https://www.youtube.com/embed/2VH8VhU7b6A",
+    "Смерть луны": "https://www.youtube.com/embed/TB7fA2H6l2Y",
+    "Сумасшедшим вход бесплатно": "https://www.youtube.com/embed/OvPx3Hj5p1c",
+    "Ты будешь гореть в аду": "https://www.youtube.com/embed/p5AVD7IuDEE",
+    "Удачи, мистер Горски": "https://www.youtube.com/embed/HppGt7vzlsA",
+    "Универсальный солдат": "https://www.youtube.com/embed/xf3I2U7g_Mw",
+    "Улетай": "https://www.youtube.com/embed/MgKq1G9J2Hg",
+    "Шаг назад (feat. UNVRS)": "https://www.youtube.com/embed/PkGm_qE3S3c",
+    "Шизофрения (feat. Серафим)": "https://www.youtube.com/embed/t8wH3r-XjMM",
+    "Шрам": "https://www.youtube.com/embed/WgRw3H0Tjso",
+    "Чтобы не забыть (feat. МОЛОДОСТЬ ВНУТРИ)": "https://www.youtube.com/embed/u3bL3W9S2Ng",
+    "Эдем": "https://www.youtube.com/embed/n3Dn2P_H6ak",
+    "Эпитафия (feat. DEEP-EX-SENSE, Лжедмитрий IV)": "https://www.youtube.com/embed/1iPPgNyLXYs",
+    "Я буду любить тебя вечно": "https://www.youtube.com/embed/6U6wHhQIk9I",
+    "Я рассыпаю сахар": "https://www.youtube.com/embed/4O3n7g9s4jo",
+    "Ядовитые": "https://www.youtube.com/embed/PgLjT5dHfH0"
+};
+
+const SONGS = Object.keys(SONGS_WITH_VIDEO);
 
 let state={
     songs:[],
@@ -322,6 +402,10 @@ return true;
 }
 
 function getProgress(){
+if(isComplete()){
+cachedProgress=100;
+return 100;
+}
 let active=state.songs.filter(s=>!s.skipped);
 if(active.length<2){
 cachedProgress=100;
@@ -422,6 +506,21 @@ if(eloDiff<50&&winner.played>5&&loser.played>5){
 let reduction=0.5+(eloDiff/100);
 winner.elo=Math.round(oldWinnerElo+(winner.elo-oldWinnerElo)*reduction);
 loser.elo=Math.round(oldLoserElo+(loser.elo-oldLoserElo)*reduction);
+}
+}
+
+function toggleVideo(songId){
+let containerId='video_'+songId;
+let container=document.getElementById(containerId);
+let btn=document.getElementById('video_btn_'+songId);
+if(container){
+if(container.classList.contains('show')){
+container.classList.remove('show');
+if(btn)btn.classList.remove('active');
+}else{
+container.classList.add('show');
+if(btn)btn.classList.add('active');
+}
 }
 }
 
@@ -596,6 +695,13 @@ app.innerHTML=`
 </div>
 </div>
 <div class="info-item">
+<div class="icon">🎬</div>
+<div class="text">
+<div class="main">Прослушать</div>
+<div class="desc">Кликни на кнопку видео</div>
+</div>
+</div>
+<div class="info-item">
 <div class="icon">⏭️</div>
 <div class="text">
 <div class="main">Пропустить</div>
@@ -647,6 +753,12 @@ let favB=state.b.favorite?'active':'';
 let skipA=state.a.favorite?'disabled':'';
 let skipB=state.b.favorite?'disabled':'';
 let canUndo=state.voteHistory.length>0;
+let videoUrlA=SONGS_WITH_VIDEO[state.a.title]||null;
+let videoUrlB=SONGS_WITH_VIDEO[state.b.title]||null;
+let videoIdA='video_'+state.a.id;
+let videoIdB='video_'+state.b.id;
+let btnIdA='video_btn_'+state.a.id;
+let btnIdB='video_btn_'+state.b.id;
 function getTitleClass(title){
 if(title.length>30)return 'xsmall';
 if(title.length>20)return 'small';
@@ -673,8 +785,10 @@ let html=`
 <div class="btn-group">
 <button class="vote-btn" onclick="vote('a')">Выбрать</button>
 <button class="fav-btn ${favA}" onclick="fav('a')">❤</button>
+${videoUrlA ? `<button class="video-btn" id="${btnIdA}" onclick="toggleVideo('${state.a.id}')">▶</button>` : ''}
 <button class="skip-btn ${skipA}" onclick="skip('a')">⏭</button>
 </div>
+${videoUrlA ? `<div class="video-container" id="${videoIdA}"><iframe src="${videoUrlA}" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>` : ''}
 </div>
 <h2 style="text-align:center;font-size:15px;font-weight:300;color:#666;margin:4px 0;letter-spacing:2px;">— ИЛИ —</h2>
 <div class="song-card">
@@ -682,8 +796,10 @@ let html=`
 <div class="btn-group">
 <button class="vote-btn" onclick="vote('b')">Выбрать</button>
 <button class="fav-btn ${favB}" onclick="fav('b')">❤</button>
+${videoUrlB ? `<button class="video-btn" id="${btnIdB}" onclick="toggleVideo('${state.b.id}')">▶</button>` : ''}
 <button class="skip-btn ${skipB}" onclick="skip('b')">⏭</button>
 </div>
+${videoUrlB ? `<div class="video-container" id="${videoIdB}"><iframe src="${videoUrlB}" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>` : ''}
 </div>
 <div style="width:100%;display:flex;justify-content:center;margin:4px 0;">
 <button onclick="undoVote()" style="background:transparent;border:1px solid ${canUndo?'#555':'#333'};color:${canUndo?'#888':'#444'};padding:6px 16px;border-radius:6px;font-size:12px;cursor:${canUndo?'pointer':'default'};transition:all 0.3s ease;opacity:${canUndo?'1':'0.4'};letter-spacing:1px;display:flex;align-items:center;gap:5px;" ${!canUndo?'disabled':''} onmouseover="this.style.borderColor='${canUndo?'#8b0000':'#333'}';this.style.color='${canUndo?'#8b0000':'#444'}'" onmouseout="this.style.borderColor='${canUndo?'#555':'#333'}';this.style.color='${canUndo?'#888':'#444'}'">
