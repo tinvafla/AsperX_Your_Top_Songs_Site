@@ -108,7 +108,7 @@ body{margin:0;background:#1a1a1a;color:#e0e0e0;font-family:'Segoe UI',Arial,sans
 
 <script>
 
-const VERSION = "1.0.4";
+const VERSION = "1.0.5";
 
 const SONGS=[
     "Bad Trip", "Monsta", "Plague (feat. Ctrl+Freak)", "Sorry Not Sorry", "Stellar",
@@ -320,6 +320,10 @@ return true;
 }
 
 function getProgress(){
+if(isComplete()){
+cachedProgress=100;
+return 100;
+}
 let active=state.songs.filter(s=>!s.skipped);
 if(active.length<2){
 cachedProgress=100;
