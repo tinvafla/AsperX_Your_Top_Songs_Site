@@ -108,7 +108,7 @@ body{margin:0;background:#1a1a1a;color:#e0e0e0;font-family:'Segoe UI',Arial,sans
 
 <script>
 
-const VERSION = "1.0.6";
+const VERSION = "1.0.7";
 
 const SONGS=[
     "Bad Trip", "Monsta", "Plague (feat. Ctrl+Freak)", "Sorry Not Sorry", "Stellar",
@@ -765,12 +765,11 @@ ${skipped.map(x=>`
 `:''}
 <button class="btn-start" onclick="home()" style="margin-top:20px;">← На главную</button>
 <button class="btn-secondary" onclick="resetAll()">🔄 Начать заново</button>
-${fullComplete?`
+${!forced ? `
 <a href="tg://resolve?domain=AsperX_Your_Top_Songs_bot" class="btn-start" style="display:block;text-align:center;text-decoration:none;width:100%;margin-top:10px;" onclick="sendResultsAndExit(event)">
 🔙 Вернуться в бота и сохранить топ
 </a>
-`:
-`
+` : `
 <div style="margin-top:10px;opacity:0.5;cursor:not-allowed;background:#333;padding:18px;border-radius:8px;text-align:center;color:#888;width:100%;font-size:16px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">
 ⛔ Вернуться в бота (тест не пройден)
 </div>
