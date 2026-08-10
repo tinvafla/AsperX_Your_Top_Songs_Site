@@ -108,7 +108,7 @@ body{margin:0;background:#1a1a1a;color:#e0e0e0;font-family:'Segoe UI',Arial,sans
 
 <script>
 
-const VERSION = "1.0.8";
+const VERSION = "1.0.9";
 
 const SONGS=[
     "Bad Trip", "Monsta", "Plague (feat. Ctrl+Freak)", "Sorry Not Sorry", "Stellar",
@@ -795,7 +795,19 @@ event.preventDefault();
 const sorted=Object.entries(ratings).sort((a,b)=>b[1]-a[1]);
 const urlParams=new URLSearchParams(window.location.search);
 const userId=urlParams.get('user_id')||'telegram_user_id';
-fetch('https://asperx-your-top-songs-bot.onrender.com/save_results',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId,top_90:sorted,is_complete:false})}).then(()=>{window.location.href='tg://resolve?domain=AsperX_Your_Top_Songs_bot';}).catch(()=>{window.location.href='tg://resolve?domain=AsperX_Your_Top_Songs_bot';});
+fetch('https://asperx-your-top-songs-bot.onrender.com/save_results',{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({
+user_id:userId,
+top_90:sorted,
+is_complete:true
+})
+}).then(()=>{
+window.location.href='tg://resolve?domain=AsperX_Your_Top_Songs_bot';
+}).catch(()=>{
+window.location.href='tg://resolve?domain=AsperX_Your_Top_Songs_bot';
+});
 }
 
 document.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undoVote();}});
